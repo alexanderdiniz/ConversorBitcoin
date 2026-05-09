@@ -3,38 +3,115 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Sentinel Pro · Bitcoin Mempool Dashboard (Realista)</title>
+  <title>Sentinel Pro · Bitcoin Mempool Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
   <style>
-    .block-cube { position: relative; width: 80px; transition: all 0.3s ease; cursor: pointer; transform-style: preserve-3d; }
-    .face-front { position: relative; width: 100%; height: 100%; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; z-index: 2; box-shadow: inset 0 1px 2px rgba(255,255,255,0.2); border: 1px solid rgba(0,0,0,0.2); padding: 10px; background: inherit; }
-    .block-cube::before { content: ''; position: absolute; top: -14px; left: 7px; width: 100%; height: 14px; background: rgba(255,255,255,0.25); transform: skewX(-45deg); border-radius: 6px 6px 0 0; z-index: 1; pointer-events: none; }
-    .block-cube::after { content: ''; position: absolute; top: -7px; right: -14px; width: 14px; height: 100%; background: rgba(0,0,0,0.5); transform: skewY(-45deg); border-radius: 0 8px 8px 0; z-index: 1; pointer-events: none; }
-    .block-cube:hover { transform: scale(1.05) translateY(-12px); filter: brightness(1.1); z-index: 50; }
+    /* 3D cube effect */
+    .block-cube {
+      position: relative;
+      width: 80px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      transform-style: preserve-3d;
+    }
+    .face-front {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 2;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.2);
+      border: 1px solid rgba(0,0,0,0.2);
+      padding: 10px;
+      background: inherit;
+    }
+    .block-cube::before {
+      content: '';
+      position: absolute;
+      top: -14px;
+      left: 7px;
+      width: 100%;
+      height: 14px;
+      background: rgba(255,255,255,0.25);
+      transform: skewX(-45deg);
+      border-radius: 6px 6px 0 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .block-cube::after {
+      content: '';
+      position: absolute;
+      top: -7px;
+      right: -14px;
+      width: 14px;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      transform: skewY(-45deg);
+      border-radius: 0 8px 8px 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .block-cube:hover {
+      transform: scale(1.05) translateY(-12px);
+      filter: brightness(1.1);
+      z-index: 50;
+    }
+    /* color variants for blocks */
     .c-mined .face-front { background: linear-gradient(145deg, #4b6cb7, #182848); color: white; }
     .c-extreme .face-front { background: linear-gradient(145deg, #ff44ff, #9b2eb3); color: white; }
     .c-higher .face-front { background: linear-gradient(145deg, #e53935, #b71c1c); color: white; }
     .c-high .face-front { background: linear-gradient(145deg, #f7931a, #c45c00); color: white; }
     .c-med .face-front { background: linear-gradient(145deg, #fdd835, #f9a825); color: black; }
     .c-low .face-front { background: linear-gradient(145deg, #3baa7c, #1e6b4f); color: white; }
-    .glass-card { background: rgba(10,12,16,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 32px; transition: all 0.2s; }
-    body.light .glass-card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
-    .pulse { width: 10px; height: 10px; background: #24d27d; border-radius: 50%; animation: pulse-anim 2s infinite; }
-    @keyframes pulse-anim { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(36,210,125,0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0); } }
+    /* glass morphism */
+    .glass-card {
+      background: rgba(10,12,16,0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 32px;
+      transition: all 0.2s;
+    }
+    body.light .glass-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+    }
+    /* pulse animation */
+    .pulse {
+      width: 10px;
+      height: 10px;
+      background: #24d27d;
+      border-radius: 50%;
+      animation: pulse-anim 2s infinite;
+    }
+    @keyframes pulse-anim {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(36,210,125,0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0); }
+    }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .mono { font-family: 'SF Mono', 'Menlo', monospace; }
     .cost-update { animation: highlight 0.5s ease; }
-    @keyframes highlight { 0% { background: rgba(245,158,11,0.3); } 100% { background: transparent; } }
-    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { opacity: 0.5; }
+    @keyframes highlight {
+      0% { background: rgba(245,158,11,0.3); }
+      100% { background: transparent; }
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { opacity: 0.5; }
   </style>
 </head>
 <body id="body-root" style="background:#0a0c10;">
   <div id="root"></div>
   <script type="text/babel">
+    // ----------------------------- I18N ------------------------------------
     const I18N = {
       pt: {
         status: "REDE ATIVA", loading: "SINCRONIZANDO...", price: "Preço BTC", mp: "Mempool",
@@ -70,6 +147,7 @@
       }
     };
 
+    // Reference levels for quick table
     const REF_LEVELS = [
       { label: '1 Sat', sats: 1 }, { label: '100 Sats', sats: 100 },
       { label: '1k Sats', sats: 1000 }, { label: '10k Sats', sats: 10000 },
@@ -79,8 +157,84 @@
       { label: '100M (1 BTC)', sats: 100000000 }
     ];
 
-    const { useState, useEffect, useCallback, useMemo, useRef } = React;
+    // ----------------------------- Utils -----------------------------------
+    function parseNumberFromLocale(str) {
+      if (str === undefined || str === null || str === '') return 0;
+      let s = String(str).trim().replace(/[^\d,.-]/g, '');
+      if (s === '') return 0;
+      let lastComma = s.lastIndexOf(',');
+      let lastDot = s.lastIndexOf('.');
+      if (lastComma > lastDot && lastComma !== -1) {
+        let decimalPart = s.substring(lastComma + 1);
+        s = s.substring(0, lastComma).replace(/\./g, '') + '.' + decimalPart;
+      } else if (lastDot > lastComma && lastDot !== -1) {
+        let decimalPart = s.substring(lastDot + 1);
+        s = s.substring(0, lastDot).replace(/,/g, '') + '.' + decimalPart;
+      } else {
+        s = s.replace(/,/g, '').replace(/\./g, '');
+      }
+      const num = parseFloat(s);
+      return isNaN(num) ? 0 : Math.max(0, num);
+    }
 
+    function formatSatoshis(sats) { return sats.toLocaleString('pt-BR'); }
+    
+    function parseSatoshisFromString(str) {
+      if (!str) return 0;
+      const digits = String(str).replace(/\D/g, '');
+      const num = parseInt(digits, 10);
+      return isNaN(num) ? 0 : Math.max(0, num);
+    }
+
+    // Realistic fallback data when APIs fail
+    function generateRealisticFallback() {
+      const now = Date.now() / 1000;
+      const genesisTime = 1230940800;
+      const secondsSinceGenesis = now - genesisTime;
+      const estimatedHeight = Math.floor(secondsSinceGenesis / 600) + 1;
+      const baseHeight = Math.max(840000, Math.min(estimatedHeight, 950000));
+      
+      const pools = ["Foundry USA", "Antpool", "F2Pool", "ViaBTC", "Binance Pool", "Marathon", "Luxor", "SpiderPool"];
+      const blocks = [];
+      for (let i = 0; i < 10; i++) {
+        const timestamp = now - (i * 600) - Math.random() * 300;
+        const height = baseHeight - i;
+        const pool = pools[Math.floor(Math.random() * pools.length)];
+        const medianFee = 5 + Math.floor(Math.random() * 45);
+        const weight = 3.92e6 + Math.random() * 0.15e6;
+        const size = weight / 3.8;
+        blocks.push({
+          height, size, timestamp, weight,
+          extras: { pool: { name: pool }, medianFee }
+        });
+      }
+      
+      const projected = [
+        { vsize: 1.32e6, medianFee: 25 + Math.floor(Math.random() * 12) },
+        { vsize: 1.18e6, medianFee: 15 + Math.floor(Math.random() * 10) },
+        { vsize: 0.95e6, medianFee: 7 + Math.floor(Math.random() * 6) }
+      ];
+      
+      return {
+        mp: { count: 7500 + Math.floor(Math.random() * 5000), vsize: 35e6 + Math.random() * 18e6, total_fee: 0.58 + Math.random() * 0.6 },
+        fees: { fastestFee: 26 + Math.floor(Math.random() * 12), halfHourFee: 16 + Math.floor(Math.random() * 8), hourFee: 6 + Math.floor(Math.random() * 6) },
+        projected, blocks, height: baseHeight,
+        diff: { difficulty: 108.5e12, difficultyChange: 1.8 + (Math.random() * 2 - 1), estimatedHashrate: 660e18 + Math.random() * 50e18 },
+        blocks24h: 138 + Math.floor(Math.random() * 14)
+      };
+    }
+
+    async function safeFetch(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const ct = res.headers.get('content-type');
+        if (ct && ct.includes('application/json')) return await res.json();
+        return null;
+      } catch { return null; }
+    }
+
+    // ----------------------------- Components ------------------------------
     const InfoIcon = ({ tip }) => (
       <div className="group relative cursor-help">
         <div className="flex items-center justify-center w-4 h-4 text-[10px] font-extrabold rounded-full bg-orange-500/10 border border-orange-500/40 text-orange-500">?</div>
@@ -115,76 +269,8 @@
       </div>
     );
 
-    function parseNumberFromLocale(str) {
-      if (str === undefined || str === null || str === '') return 0;
-      let s = String(str).trim().replace(/[^\d,.-]/g, '');
-      if (s === '') return 0;
-      let lastComma = s.lastIndexOf(',');
-      let lastDot = s.lastIndexOf('.');
-      if (lastComma > lastDot && lastComma !== -1) {
-        let decimalPart = s.substring(lastComma + 1);
-        s = s.substring(0, lastComma).replace(/\./g, '') + '.' + decimalPart;
-      } else if (lastDot > lastComma && lastDot !== -1) {
-        let decimalPart = s.substring(lastDot + 1);
-        s = s.substring(0, lastDot).replace(/,/g, '') + '.' + decimalPart;
-      } else {
-        s = s.replace(/,/g, '').replace(/\./g, '');
-      }
-      const num = parseFloat(s);
-      return isNaN(num) ? 0 : Math.max(0, num);
-    }
-
-    function formatSatoshis(sats) { return sats.toLocaleString('pt-BR'); }
-    function parseSatoshisFromString(str) {
-      if (!str) return 0;
-      const digits = String(str).replace(/\D/g, '');
-      const num = parseInt(digits, 10);
-      return isNaN(num) ? 0 : Math.max(0, num);
-    }
-
-    // Gera dados realistas para quando a API offline (simula mainnet atual)
-    function generateRealisticFallback() {
-      const now = Date.now() / 1000;
-      const genesisTime = 1230940800;
-      const secondsSinceGenesis = now - genesisTime;
-      const estimatedHeight = Math.floor(secondsSinceGenesis / 600) + 1;
-      const baseHeight = Math.max(840000, Math.min(estimatedHeight, 950000));
-      
-      const pools = ["Foundry USA", "Antpool", "F2Pool", "ViaBTC", "Binance Pool", "Marathon", "Luxor", "SpiderPool"];
-      
-      const blocks = [];
-      for (let i = 0; i < 10; i++) {
-        const timestamp = now - (i * 600) - Math.random() * 300;
-        const height = baseHeight - i;
-        const pool = pools[Math.floor(Math.random() * pools.length)];
-        const medianFee = 5 + Math.floor(Math.random() * 45);
-        const weight = 3.92e6 + Math.random() * 0.15e6;
-        const size = weight / 3.8;
-        blocks.push({
-          height: height,
-          size: size,
-          timestamp: timestamp,
-          weight: weight,
-          extras: { pool: { name: pool }, medianFee: medianFee }
-        });
-      }
-      
-      const projected = [
-        { vsize: 1.32e6, medianFee: 25 + Math.floor(Math.random() * 12) },
-        { vsize: 1.18e6, medianFee: 15 + Math.floor(Math.random() * 10) },
-        { vsize: 0.95e6, medianFee: 7 + Math.floor(Math.random() * 6) }
-      ];
-      
-      return {
-        mp: { count: 7500 + Math.floor(Math.random() * 5000), vsize: 35e6 + Math.random() * 18e6, total_fee: 0.58 + Math.random() * 0.6 },
-        fees: { fastestFee: 26 + Math.floor(Math.random() * 12), halfHourFee: 16 + Math.floor(Math.random() * 8), hourFee: 6 + Math.floor(Math.random() * 6) },
-        projected: projected,
-        blocks: blocks,
-        height: baseHeight,
-        diff: { difficulty: 108.5e12, difficultyChange: 1.8 + (Math.random() * 2 - 1), estimatedHashrate: 660e18 + Math.random() * 50e18 },
-        blocks24h: 138 + Math.floor(Math.random() * 14)
-      };
-    }
+    // ----------------------------- Main App ---------------------------------
+    const { useState, useEffect, useCallback, useMemo } = React;
 
     function App() {
       const [lang, setLang] = useState('pt');
@@ -207,19 +293,9 @@
         const price = currency === 'BRL' ? prices.brl : prices.usd;
         return isNaN(price) || price === 0 ? 0 : price;
       }, [currency, prices]);
-      
       const fiatSymbol = currency === 'BRL' ? 'R$' : '$';
 
-      const safeFetch = async (url) => {
-        try {
-          const res = await fetch(url);
-          if (!res.ok) return null;
-          const ct = res.headers.get('content-type');
-          if (ct && ct.includes('application/json')) return await res.json();
-          return null;
-        } catch { return null; }
-      };
-
+      // Data fetching
       const fetchData = useCallback(async () => {
         setStatus('sync');
         setIsFallback(false);
@@ -245,13 +321,8 @@
         if (mempool && fees && projBlocks && blocksList && heightData && diffData) {
           const blocks24h = blocksList.filter(b => (Date.now()/1000 - b.timestamp) <= 86400).length;
           setData({
-            mp: mempool,
-            fees: fees,
-            projected: projBlocks,
-            blocks: blocksList.slice(0, 10),
-            height: heightData,
-            diff: diffData,
-            blocks24h: blocks24h
+            mp: mempool, fees, projected: projBlocks, blocks: blocksList.slice(0, 10),
+            height: heightData, diff: diffData, blocks24h
           });
           setStatus('active');
         } else {
@@ -279,6 +350,7 @@
         document.body.style.backgroundColor = isDark ? '#0a0c10' : '#f8fafc';
       }, [isDark]);
 
+      // Fee calculation
       const activeFee = useMemo(() => {
         if (!data) return 20;
         if (feeType === 'high') return data.fees.fastestFee;
@@ -305,6 +377,7 @@
         return t.timeEstLow;
       }, [feeType, t]);
 
+      // Converter handlers
       const updateBtc = (val) => setConvBtc(parseNumberFromLocale(val));
       const updateFiat = (val) => {
         if (currentPrice > 0) {
@@ -314,13 +387,14 @@
       };
       const updateSats = (val) => setConvBtc(parseSatoshisFromString(val) / 1e8);
       
-      const fiatVal = (!isNaN(convBtc * currentPrice) && isFinite(convBtc * currentPrice)) 
-        ? (convBtc * currentPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+      const fiatVal = (!isNaN(convBtc * currentPrice) && isFinite(convBtc * currentPrice))
+        ? (convBtc * currentPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : '0,00';
       const satsVal = Math.floor(convBtc * 1e8);
       const btcDisplay = convBtc.toFixed(8).replace(/\.?0+$/, '');
       const copy = (txt) => { navigator.clipboard.writeText(String(txt)); setShowToast(true); setTimeout(() => setShowToast(false), 2000); };
 
+      // Halving & difficulty progress
       const currentHeight = data?.height || 0;
       const blocksUntilHalving = currentHeight ? 210000 - (currentHeight % 210000) : 210000;
       const daysUntilHalving = (blocksUntilHalving * 10) / (24 * 60);
@@ -332,6 +406,7 @@
 
       return (
         <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+          {/* Top progress bar */}
           <div className="fixed top-0 left-0 w-full h-1 bg-zinc-800 z-50">
             <div className="h-full bg-orange-500 transition-all duration-1000" style={{ width: `${(tick / 30) * 100}%` }} />
           </div>
@@ -345,7 +420,7 @@
                   <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 mt-1">
                     <div className="pulse"></div>
                     <span>{status === 'active' ? t.status : t.loading}</span>
-                    {isFallback && <span className="text-yellow-400 text-[8px] ml-1">(simulado)</span>}
+                    {isFallback && <span className="text-yellow-400 text-[8px] ml-1">{t.fallbackNote}</span>}
                     <button onClick={fetchData} className="ml-2 hover:text-orange-400"><i className="fas fa-sync-alt"></i></button>
                   </div>
                 </div>
@@ -362,7 +437,7 @@
               </div>
             </div>
 
-            {/* 5 cards principais */}
+            {/* 5 stats cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-10">
               <StatCard label={t.price} value={`${fiatSymbol} ${(currentPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`} sub={`${t.lastUpdate}: ${lastUpdate || '--'}`} color="border-orange-500" isDark={isDark} tip="Preço BTC em tempo real" icon="fas fa-chart-line" />
               <StatCard label={t.mp} value={data?.mp?.count?.toLocaleString() || '---'} sub={`${(data?.mp?.vsize/1e6 || 0).toFixed(1)} MB | ${data?.mp?.total_fee?.toFixed(2) || '0'} BTC`} color="border-blue-500" isDark={isDark} tip="Transações pendentes + tamanho + fees" icon="fas fa-layer-group" />
@@ -381,7 +456,7 @@
               </div>
             </div>
 
-            {/* Blocos 3D com informações realistas */}
+            {/* 3D Block Flow */}
             <div className={`glass-card rounded-3xl p-6 mb-12 overflow-x-auto ${!isDark && 'bg-white/80'}`}>
               <h3 className="text-sm font-black uppercase tracking-wider mb-6 flex items-center gap-2"><i className="fas fa-cubes text-orange-500"></i> {t.flow}</h3>
               <div className="relative flex items-end justify-center min-h-[320px] gap-5 pt-12 pb-6 scrollbar-hide" style={{ minWidth: '700px' }}>
@@ -413,7 +488,7 @@
               </div>
             </div>
 
-            {/* 3 painéis: Rede, Calculadora, Conversor */}
+            {/* Network, Calculator, Converter panels */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
               <div className={`glass-card p-6 ${!isDark && 'bg-white'}`}>
                 <h3 className="font-black text-sm mb-5 uppercase text-orange-500"><i className="fas fa-globe mr-2"></i> {t.netTitle}</h3>
@@ -461,7 +536,7 @@
               </div>
             </div>
 
-            {/* Tabelas */}
+            {/* Tables */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
               <div className={`glass-card overflow-hidden ${!isDark && 'bg-white'}`}>
                 <div className="p-5 border-b border-white/10"><h3 className="font-black text-sm uppercase text-orange-500"><i className="fas fa-table mr-2"></i> {t.quickTable}</h3></div>
@@ -508,6 +583,7 @@
             </div>
             <footer className="text-center text-[9px] text-slate-500 pb-10">{t.footer} · Dados em tempo real via Blockchain.info + Mempool.space</footer>
           </div>
+          {/* Toast notification */}
           <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-5 py-2 rounded-full text-xs font-black flex gap-2 transition-all duration-300 z-50 ${showToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <i className="fas fa-check-circle"></i> {t.toast}
           </div>
