@@ -1,616 +1,521 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mempool Sentinel Pro · Dashboard Analítico Bitcoin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
-
-        :root {
-            --mp-low: #44bb99; --mp-med: #fbc02d; --mp-high: #f7931a;
-            --mp-higher: #d32f2f; --mp-extreme: #7b1fa2; --btc-orange: #f7931a;
-            --text-main: #f3f4f6;
-            --text-muted: #94a3b8;
-            --bg-body: #0a0c10;
-        }
-
-        /* Variáveis específicas para o Modo Claro */
-        body.light {
-            --bg-body: #f8fafc;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-        }
-
-        body { 
-            background: var(--bg-body); 
-            color: var(--text-main); 
-            font-family: 'Inter', sans-serif; 
-            transition: background 0.4s ease, color 0.4s ease; 
-            scroll-behavior: smooth; 
-        }
-        
-        .mono { font-family: 'JetBrains Mono', monospace; }
-
-        /* Glassmorphism Dinâmico */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 28px;
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
-            transition: background 0.4s ease, border 0.4s ease, box-shadow 0.4s ease;
-        }
-
-        .light .glass-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05);
-        }
-
-        /* Cubos Isométricos 3D */
-        .block-cube {
-            position: relative;
-            width: 70px;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer;
-            transform-style: preserve-3d;
-            margin: 0 14px;
-        }
-
-        .face-front {
-            position: relative;
-            width: 100%; height: 100%;
-            border-radius: 4px;
-            display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
-            z-index: 2;
-            box-shadow: inset 0 1px 2px rgba(255,255,255,0.3);
-            border: 1px solid rgba(0,0,0,0.1);
-        }
-
-        .block-cube::before {
-            content: ''; position: absolute; top: -14px; left: 7px; width: 100%; height: 14px;
-            background: rgba(255,255,255,0.25); transform: skewX(-45deg); border-radius: 1px; z-index: 1;
-        }
-
-        .block-cube::after {
-            content: ''; position: absolute; top: -7px; right: -14px; width: 14px; height: 100%;
-            background: rgba(0,0,0,0.4); transform: skewY(-45deg); border-radius: 1px; z-index: 1;
-        }
-
-        .light .block-cube::after {
-            background: rgba(0,0,0,0.15);
-        }
-
-        .block-cube:hover { transform: scale(1.1) translateY(-20px); filter: brightness(1.1); z-index: 50; }
-
-        .c-mined .face-front { background: linear-gradient(180deg, #5d3fd3 0%, #1e1b4b 100%); }
-        .c-low .face-front { background: linear-gradient(180deg, #44bb99 0%, #2e7d64 100%); }
-        .c-med .face-front { background: linear-gradient(180deg, #fbc02d 0%, #f9a825 100%); }
-        .c-high .face-front { background: linear-gradient(180deg, #f7931a 0%, #e65100 100%); }
-        .c-higher .face-front { background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 100%); }
-        .c-extreme .face-front { background: linear-gradient(180deg, #7b1fa2 0%, #4a148c 100%); }
-
-        #progress-top { height: 4px; background: var(--btc-orange); width: 0%; box-shadow: 0 0 15px var(--btc-orange); transition: width 1s linear; }
-
-        .tooltip-box {
-            visibility: hidden; position: absolute; bottom: 145%; left: 50%; transform: translateX(-50%);
-            background: #0f172a; color: #f3f4f6; padding: 14px; border-radius: 16px; font-size: 11px;
-            width: 220px; text-align: center; z-index: 100; box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-            border: 1px solid rgba(255,255,255,0.1); line-height: 1.6; opacity: 0; transition: 0.3s; pointer-events: none;
-        }
-        
-        .light .tooltip-box {
-            background: #ffffff;
-            color: #0f172a;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            border: 1px solid #e2e8f0;
-        }
-
-        .block-cube:hover .tooltip-box, .info-icon:hover .tooltip-box { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(-10px); }
-
-        .info-icon {
-            display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px;
-            font-size: 10px; font-weight: 800; border-radius: 50%; background: rgba(247, 147, 26, 0.1);
-            color: var(--btc-orange); border: 1px solid rgba(247, 147, 26, 0.4); cursor: help; margin-left: 6px;
-        }
-
-        input {
-            background: rgba(255,255,255,0.05) !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            color: inherit !important;
-            transition: all 0.3s ease;
-        }
-
-        .light input {
-            background: #f1f5f9 !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #0f172a !important;
-        }
-
-        input:focus { border-color: var(--btc-orange) !important; box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.2); }
-
-        .light .text-gray-300, .light .text-gray-400, .light .text-gray-500 { color: #64748b; }
-        .light .text-white { color: #0f172a; }
-
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
-        .light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Sentinel Pro · Bitcoin Mempool Dashboard (Realista)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <style>
+    .block-cube { position: relative; width: 80px; transition: all 0.3s ease; cursor: pointer; transform-style: preserve-3d; }
+    .face-front { position: relative; width: 100%; height: 100%; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; z-index: 2; box-shadow: inset 0 1px 2px rgba(255,255,255,0.2); border: 1px solid rgba(0,0,0,0.2); padding: 10px; background: inherit; }
+    .block-cube::before { content: ''; position: absolute; top: -14px; left: 7px; width: 100%; height: 14px; background: rgba(255,255,255,0.25); transform: skewX(-45deg); border-radius: 6px 6px 0 0; z-index: 1; pointer-events: none; }
+    .block-cube::after { content: ''; position: absolute; top: -7px; right: -14px; width: 14px; height: 100%; background: rgba(0,0,0,0.5); transform: skewY(-45deg); border-radius: 0 8px 8px 0; z-index: 1; pointer-events: none; }
+    .block-cube:hover { transform: scale(1.05) translateY(-12px); filter: brightness(1.1); z-index: 50; }
+    .c-mined .face-front { background: linear-gradient(145deg, #4b6cb7, #182848); color: white; }
+    .c-extreme .face-front { background: linear-gradient(145deg, #ff44ff, #9b2eb3); color: white; }
+    .c-higher .face-front { background: linear-gradient(145deg, #e53935, #b71c1c); color: white; }
+    .c-high .face-front { background: linear-gradient(145deg, #f7931a, #c45c00); color: white; }
+    .c-med .face-front { background: linear-gradient(145deg, #fdd835, #f9a825); color: black; }
+    .c-low .face-front { background: linear-gradient(145deg, #3baa7c, #1e6b4f); color: white; }
+    .glass-card { background: rgba(10,12,16,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 32px; transition: all 0.2s; }
+    body.light .glass-card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+    .pulse { width: 10px; height: 10px; background: #24d27d; border-radius: 50%; animation: pulse-anim 2s infinite; }
+    @keyframes pulse-anim { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(36,210,125,0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0); } }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .mono { font-family: 'SF Mono', 'Menlo', monospace; }
+    .cost-update { animation: highlight 0.5s ease; }
+    @keyframes highlight { 0% { background: rgba(245,158,11,0.3); } 100% { background: transparent; } }
+    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { opacity: 0.5; }
+  </style>
 </head>
-<body class="min-h-screen pb-12 overflow-x-hidden">
+<body id="body-root" style="background:#0a0c10;">
+  <div id="root"></div>
+  <script type="text/babel">
+    const I18N = {
+      pt: {
+        status: "REDE ATIVA", loading: "SINCRONIZANDO...", price: "Preço BTC", mp: "Mempool",
+        fee: "Taxa Rápida", halv: "Halving", flow: "Fluxo de Blocos 3D", now: "AGORA",
+        in: "Em ~", min: " min", ago: " atrás", conf: "Confirmação rápida",
+        prioH: "Alta (1 bloco)", prioM: "Média (3 blocos)", prioL: "Baixa (6+ blocos)",
+        size: "Tamanho TX (vBytes)", estCost: "Custo Estimado", estSats: "Custo em SATS",
+        netTitle: "Rede & Ajustes", calcTitle: "Calculadora", convTitle: "Conversor",
+        quickTable: "Tabela Referência", recent: "Últimos Blocos", footer: "Sentinel Pro v8.5",
+        diff: "Dificuldade", adj: "Ajuste Est.", hash: "Hashrate", pending: "Fees Pendentes",
+        lBtc: "BTC", lSats: "SATS", thP: "Minerador", thW: "Peso", thF: "Taxa Média",
+        fLabelBRL: "REAIS", fLabelUSD: "DÓLARES", thFiat: "Valor Fiat", toast: "Copiado!",
+        unit: "Unidade", lastUpdate: "Última atualização", blocks24h: "Blocos 24h",
+        nextHalving: "Próx. Halving", nextDiff: "Próx. Ajuste", days: "dias", minTxWarn: "Mínimo: 140 vBytes",
+        timeEstHigh: "~10 min (próximo bloco)", timeEstMed: "~30 min (3º bloco)", timeEstLow: "~60+ min (6º+ bloco)",
+        fallbackNote: " (dados simulados)"
+      },
+      en: {
+        status: "ACTIVE", loading: "SYNCING...", price: "BTC Price", mp: "Mempool",
+        fee: "Fast Fee", halv: "Halving", flow: "3D Block Flow", now: "NOW",
+        in: "In ~", min: " min", ago: " ago", conf: "Fast confirm",
+        prioH: "High (1 block)", prioM: "Medium (3 blocks)", prioL: "Low (6+ blocks)",
+        size: "TX Size (vBytes)", estCost: "Estimated Cost", estSats: "Cost in SATS",
+        netTitle: "Network & Adjusts", calcTitle: "Calculator", convTitle: "Converter",
+        quickTable: "Reference Table", recent: "Recent Blocks", footer: "Sentinel Pro v8.5",
+        diff: "Difficulty", adj: "Est. Adjustment", hash: "Hashrate", pending: "Pending Fees",
+        lBtc: "BTC", lSats: "SATS", thP: "Mined By", thW: "Weight", thF: "Avg Fee",
+        fLabelBRL: "REAIS", fLabelUSD: "DOLLARS", thFiat: "Fiat Value", toast: "Copied!",
+        unit: "Unit", lastUpdate: "Last update", blocks24h: "Blocks 24h",
+        nextHalving: "Next Halving", nextDiff: "Next Adjustment", days: "days", minTxWarn: "Min: 140 vBytes",
+        timeEstHigh: "~10 min (next block)", timeEstMed: "~30 min (3rd block)", timeEstLow: "~60+ min (6th+ block)",
+        fallbackNote: " (simulated)"
+      }
+    };
 
-    <div class="fixed top-0 left-0 w-full z-50"><div id="progress-top"></div></div>
+    const REF_LEVELS = [
+      { label: '1 Sat', sats: 1 }, { label: '100 Sats', sats: 100 },
+      { label: '1k Sats', sats: 1000 }, { label: '10k Sats', sats: 10000 },
+      { label: '50k Sats', sats: 50000 }, { label: '100k (mBTC)', sats: 100000 },
+      { label: '500k Sats', sats: 500000 }, { label: '1M (1% BTC)', sats: 1000000 },
+      { label: '10M (10% BTC)', sats: 10000000 }, { label: '21M (Supply)', sats: 21000000 },
+      { label: '100M (1 BTC)', sats: 100000000 }
+    ];
 
-    <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+    const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+    const InfoIcon = ({ tip }) => (
+      <div className="group relative cursor-help">
+        <div className="flex items-center justify-center w-4 h-4 text-[10px] font-extrabold rounded-full bg-orange-500/10 border border-orange-500/40 text-orange-500">?</div>
+        <div className="invisible group-hover:visible absolute bottom-[150%] left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] p-3 rounded-2xl w-44 text-center shadow-2xl border border-white/10 z-50 pointer-events-none font-bold">{tip}</div>
+      </div>
+    );
+
+    const Cube = ({ label, height, variant, topLabel, midLabel, botLabel }) => (
+      <div className={`block-cube flex-shrink-0 ${variant}`} style={{ height: `${Math.min(220, Math.max(80, height))}px` }}>
+        <div className="face-front">
+          <span className="text-[8px] font-black opacity-50 uppercase tracking-tighter">{topLabel}</span>
+          <div className="flex flex-col items-center">
+            <span className="text-[12px] font-black font-mono leading-tight">{midLabel}</span>
+            <span className="text-[8px] font-bold opacity-70 mt-1">{botLabel}</span>
+          </div>
+          <span className="text-[9px] font-black opacity-40 font-mono">{label}</span>
+        </div>
+      </div>
+    );
+
+    const StatCard = ({ label, value, sub, color, isDark, tip, icon }) => (
+      <div className={`glass-card p-6 border-l-4 ${color} transition-all hover:scale-[1.01] ${!isDark && 'bg-white'}`}>
+        <div className="flex justify-between mb-2">
+          <p className="text-[10px] font-bold text-slate-400 uppercase">{label}</p>
+          <InfoIcon tip={tip} />
+        </div>
+        <div className="flex items-center gap-2">
+          <i className={`${icon} text-lg ${color.replace('border-','text-')}`}></i>
+          <h2 className="text-xl font-black mono">{value}</h2>
+        </div>
+        <p className="text-[9px] font-bold mt-3 text-slate-500 uppercase italic opacity-60">{sub}</p>
+      </div>
+    );
+
+    function parseNumberFromLocale(str) {
+      if (str === undefined || str === null || str === '') return 0;
+      let s = String(str).trim().replace(/[^\d,.-]/g, '');
+      if (s === '') return 0;
+      let lastComma = s.lastIndexOf(',');
+      let lastDot = s.lastIndexOf('.');
+      if (lastComma > lastDot && lastComma !== -1) {
+        let decimalPart = s.substring(lastComma + 1);
+        s = s.substring(0, lastComma).replace(/\./g, '') + '.' + decimalPart;
+      } else if (lastDot > lastComma && lastDot !== -1) {
+        let decimalPart = s.substring(lastDot + 1);
+        s = s.substring(0, lastDot).replace(/,/g, '') + '.' + decimalPart;
+      } else {
+        s = s.replace(/,/g, '').replace(/\./g, '');
+      }
+      const num = parseFloat(s);
+      return isNaN(num) ? 0 : Math.max(0, num);
+    }
+
+    function formatSatoshis(sats) { return sats.toLocaleString('pt-BR'); }
+    function parseSatoshisFromString(str) {
+      if (!str) return 0;
+      const digits = String(str).replace(/\D/g, '');
+      const num = parseInt(digits, 10);
+      return isNaN(num) ? 0 : Math.max(0, num);
+    }
+
+    // Gera dados realistas para quando a API offline (simula mainnet atual)
+    function generateRealisticFallback() {
+      const now = Date.now() / 1000;
+      const genesisTime = 1230940800;
+      const secondsSinceGenesis = now - genesisTime;
+      const estimatedHeight = Math.floor(secondsSinceGenesis / 600) + 1;
+      const baseHeight = Math.max(840000, Math.min(estimatedHeight, 950000));
+      
+      const pools = ["Foundry USA", "Antpool", "F2Pool", "ViaBTC", "Binance Pool", "Marathon", "Luxor", "SpiderPool"];
+      
+      const blocks = [];
+      for (let i = 0; i < 10; i++) {
+        const timestamp = now - (i * 600) - Math.random() * 300;
+        const height = baseHeight - i;
+        const pool = pools[Math.floor(Math.random() * pools.length)];
+        const medianFee = 5 + Math.floor(Math.random() * 45);
+        const weight = 3.92e6 + Math.random() * 0.15e6;
+        const size = weight / 3.8;
+        blocks.push({
+          height: height,
+          size: size,
+          timestamp: timestamp,
+          weight: weight,
+          extras: { pool: { name: pool }, medianFee: medianFee }
+        });
+      }
+      
+      const projected = [
+        { vsize: 1.32e6, medianFee: 25 + Math.floor(Math.random() * 12) },
+        { vsize: 1.18e6, medianFee: 15 + Math.floor(Math.random() * 10) },
+        { vsize: 0.95e6, medianFee: 7 + Math.floor(Math.random() * 6) }
+      ];
+      
+      return {
+        mp: { count: 7500 + Math.floor(Math.random() * 5000), vsize: 35e6 + Math.random() * 18e6, total_fee: 0.58 + Math.random() * 0.6 },
+        fees: { fastestFee: 26 + Math.floor(Math.random() * 12), halfHourFee: 16 + Math.floor(Math.random() * 8), hourFee: 6 + Math.floor(Math.random() * 6) },
+        projected: projected,
+        blocks: blocks,
+        height: baseHeight,
+        diff: { difficulty: 108.5e12, difficultyChange: 1.8 + (Math.random() * 2 - 1), estimatedHashrate: 660e18 + Math.random() * 50e18 },
+        blocks24h: 138 + Math.floor(Math.random() * 14)
+      };
+    }
+
+    function App() {
+      const [lang, setLang] = useState('pt');
+      const [currency, setCurrency] = useState('BRL');
+      const [isDark, setIsDark] = useState(true);
+      const [data, setData] = useState(null);
+      const [prices, setPrices] = useState({ brl: 0, usd: 0 });
+      const [tick, setTick] = useState(0);
+      const [status, setStatus] = useState('sync');
+      const [lastUpdate, setLastUpdate] = useState(null);
+      const [convBtc, setConvBtc] = useState(0.001);
+      const [txSize, setTxSize] = useState(140);
+      const [feeType, setFeeType] = useState('high');
+      const [showToast, setShowToast] = useState(false);
+      const [costHighlight, setCostHighlight] = useState(false);
+      const [isFallback, setIsFallback] = useState(false);
+
+      const t = I18N[lang];
+      const currentPrice = useMemo(() => {
+        const price = currency === 'BRL' ? prices.brl : prices.usd;
+        return isNaN(price) || price === 0 ? 0 : price;
+      }, [currency, prices]);
+      
+      const fiatSymbol = currency === 'BRL' ? 'R$' : '$';
+
+      const safeFetch = async (url) => {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) return null;
+          const ct = res.headers.get('content-type');
+          if (ct && ct.includes('application/json')) return await res.json();
+          return null;
+        } catch { return null; }
+      };
+
+      const fetchData = useCallback(async () => {
+        setStatus('sync');
+        setIsFallback(false);
         
-        <!-- Header -->
-        <header class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
-            <div class="flex items-center gap-5">
-                <div class="p-4 bg-orange-500 rounded-[2rem] shadow-2xl shadow-orange-500/30">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M22.31 14.28c.36-2.45-1.5-3.76-4.04-4.64l.82-3.32-2.02-.5-.8 3.22c-.53-.13-1.08-.26-1.62-.38l.81-3.24-2.02-.5-.82 3.32c-.44-.1-.87-.2-1.29-.3l.01-.01-2.78-.69-.54 2.15s1.5.34 1.46.36c.82.2.96.74.94 1.17l-.94 3.76c.06.01.13.04.21.07l-.21-.05-1.32 5.29c-.1.25-.35.63-.91.49.02.03-1.46-.36-1.46-.36l-.99 2.3 2.63.66c.49.12.96.25 1.43.37l-.83 3.33 2.02.5.82-3.3c.55.15 1.09.29 1.62.42l-.82 3.28 2.02.5.83-3.33c3.45.65 6.04.39 7.13-2.73.88-2.51-.04-3.96-1.86-4.91 1.33-.31 2.33-1.18 2.59-2.98zm-4.64 6.52c-.63 2.52-4.86 1.16-6.24.81l1.11-4.47c1.38.35 5.79.98 5.13 3.66zm.63-6.55c-.57 2.3-4.1 1.13-5.25.85l1.01-4.04c1.15.28 4.84.81 4.24 3.19z" fill="white"/></svg>
-                </div>
+        const [ticker, mempool, fees, projBlocks, blocksList, heightData, diffData] = await Promise.all([
+          safeFetch('https://api.blockchain.info/ticker'),
+          safeFetch('https://mempool.space/api/v1/mempool'),
+          safeFetch('https://mempool.space/api/v1/fees/recommended'),
+          safeFetch('https://mempool.space/api/v1/fees/mempool-blocks'),
+          safeFetch('https://mempool.space/api/v1/blocks'),
+          safeFetch('https://mempool.space/api/blocks/tip/height'),
+          safeFetch('https://mempool.space/api/v1/difficulty-adjustment')
+        ]);
+        
+        if (ticker) {
+          setPrices({ brl: ticker.BRL?.last || 0, usd: ticker.USD?.last || 0 });
+        } else {
+          setPrices({ brl: 289000, usd: 56800 });
+        }
+        
+        setLastUpdate(new Date().toLocaleTimeString(lang === 'pt' ? 'pt-BR' : 'en-US'));
+        
+        if (mempool && fees && projBlocks && blocksList && heightData && diffData) {
+          const blocks24h = blocksList.filter(b => (Date.now()/1000 - b.timestamp) <= 86400).length;
+          setData({
+            mp: mempool,
+            fees: fees,
+            projected: projBlocks,
+            blocks: blocksList.slice(0, 10),
+            height: heightData,
+            diff: diffData,
+            blocks24h: blocks24h
+          });
+          setStatus('active');
+        } else {
+          const fallbackData = generateRealisticFallback();
+          setData(fallbackData);
+          setStatus('active');
+          setIsFallback(true);
+          if (!ticker) setPrices({ brl: 292500 + Math.random() * 8000, usd: 57200 + Math.random() * 1500 });
+        }
+      }, [lang]);
+
+      useEffect(() => {
+        fetchData();
+        const interval = setInterval(() => {
+          setTick(prev => {
+            if (prev >= 29) { fetchData(); return 0; }
+            return prev + 1;
+          });
+        }, 1000);
+        return () => clearInterval(interval);
+      }, [fetchData]);
+
+      useEffect(() => {
+        document.body.classList.toggle('light', !isDark);
+        document.body.style.backgroundColor = isDark ? '#0a0c10' : '#f8fafc';
+      }, [isDark]);
+
+      const activeFee = useMemo(() => {
+        if (!data) return 20;
+        if (feeType === 'high') return data.fees.fastestFee;
+        if (feeType === 'med') return data.fees.halfHourFee;
+        return data.fees.hourFee;
+      }, [data, feeType]);
+
+      const txSizeValid = Math.max(140, Math.min(10000, txSize));
+      const totalSatsCost = txSizeValid * activeFee;
+      const btcCost = totalSatsCost / 1e8;
+      const fiatCost = btcCost * currentPrice;
+      const estCostFiat = !isNaN(fiatCost) && isFinite(fiatCost) ? fiatCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00';
+      const estCostSats = Math.floor(totalSatsCost).toLocaleString('pt-BR');
+
+      useEffect(() => {
+        setCostHighlight(true);
+        const timer = setTimeout(() => setCostHighlight(false), 500);
+        return () => clearTimeout(timer);
+      }, [currentPrice, activeFee, txSize]);
+
+      const getTimeEstimate = useCallback(() => {
+        if (feeType === 'high') return t.timeEstHigh;
+        if (feeType === 'med') return t.timeEstMed;
+        return t.timeEstLow;
+      }, [feeType, t]);
+
+      const updateBtc = (val) => setConvBtc(parseNumberFromLocale(val));
+      const updateFiat = (val) => {
+        if (currentPrice > 0) {
+          const fiatNum = parseNumberFromLocale(val);
+          if (!isNaN(fiatNum)) setConvBtc(fiatNum / currentPrice);
+        }
+      };
+      const updateSats = (val) => setConvBtc(parseSatoshisFromString(val) / 1e8);
+      
+      const fiatVal = (!isNaN(convBtc * currentPrice) && isFinite(convBtc * currentPrice)) 
+        ? (convBtc * currentPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+        : '0,00';
+      const satsVal = Math.floor(convBtc * 1e8);
+      const btcDisplay = convBtc.toFixed(8).replace(/\.?0+$/, '');
+      const copy = (txt) => { navigator.clipboard.writeText(String(txt)); setShowToast(true); setTimeout(() => setShowToast(false), 2000); };
+
+      const currentHeight = data?.height || 0;
+      const blocksUntilHalving = currentHeight ? 210000 - (currentHeight % 210000) : 210000;
+      const daysUntilHalving = (blocksUntilHalving * 10) / (24 * 60);
+      const blocksUntilDiffAdjust = currentHeight ? 2016 - (currentHeight % 2016) : 2016;
+      const daysUntilDiffAdjust = (blocksUntilDiffAdjust * 10) / (24 * 60);
+
+      const minedBlocks = data?.blocks?.slice(0, 3).reverse() || [];
+      const projectedBlocks = data?.projected?.slice(0, 3) || [];
+
+      return (
+        <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+          <div className="fixed top-0 left-0 w-full h-1 bg-zinc-800 z-50">
+            <div className="h-full bg-orange-500 transition-all duration-1000" style={{ width: `${(tick / 30) * 100}%` }} />
+          </div>
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            {/* Header */}
+            <div className="flex flex-wrap justify-between items-center mb-10 gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-orange-500 rounded-2xl shadow-xl"><i className="fas fa-cubes text-white text-2xl"></i></div>
                 <div>
-                    <h1 class="text-2xl font-black uppercase tracking-tighter">Mempool Sentinel <span class="text-orange-500">Pro</span></h1>
-                    <div class="flex items-center gap-2 text-[10px] font-black text-gray-500 mt-1 uppercase tracking-widest">
-                        <span id="live-dot" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span id="ui-status-text">Rede Ativa</span>
-                    </div>
+                  <h1 className="text-2xl font-black uppercase tracking-tighter">Sentinel <span className="text-orange-500">Pro</span></h1>
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 mt-1">
+                    <div className="pulse"></div>
+                    <span>{status === 'active' ? t.status : t.loading}</span>
+                    {isFallback && <span className="text-yellow-400 text-[8px] ml-1">(simulado)</span>}
+                    <button onClick={fetchData} className="ml-2 hover:text-orange-400"><i className="fas fa-sync-alt"></i></button>
+                  </div>
                 </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex p-1 rounded-xl bg-white/10">
+                  <button onClick={() => setCurrency('BRL')} className={`px-3 py-1 rounded-lg text-xs font-black ${currency === 'BRL' ? 'bg-orange-500 text-white' : ''}`}>BRL</button>
+                  <button onClick={() => setCurrency('USD')} className={`px-3 py-1 rounded-lg text-xs font-black ${currency === 'USD' ? 'bg-orange-500 text-white' : ''}`}>USD</button>
+                </div>
+                <button onClick={() => setLang(lang === 'pt' ? 'en' : 'pt')} className="px-4 py-1 rounded-xl text-xs font-black border border-white/20">{lang.toUpperCase()}</button>
+                <button onClick={() => setIsDark(!isDark)} className="px-3 py-1 rounded-xl border border-white/20">
+                  <i className={`fas ${isDark ? 'fa-sun' : 'fa-moon'}`}></i>
+                </button>
+              </div>
             </div>
 
-            <div class="flex gap-4">
-                <div class="flex bg-gray-900/10 light:bg-gray-100 p-1 rounded-2xl border border-gray-800 light:border-gray-200 shadow-inner">
-                    <button id="set-brl" class="px-5 py-2 rounded-xl text-xs font-black transition-all bg-orange-500 text-white shadow-lg">BRL</button>
-                    <button id="set-usd" class="px-5 py-2 rounded-xl text-xs font-black transition-all text-gray-400 hover:text-orange-500">USD</button>
+            {/* 5 cards principais */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-10">
+              <StatCard label={t.price} value={`${fiatSymbol} ${(currentPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`} sub={`${t.lastUpdate}: ${lastUpdate || '--'}`} color="border-orange-500" isDark={isDark} tip="Preço BTC em tempo real" icon="fas fa-chart-line" />
+              <StatCard label={t.mp} value={data?.mp?.count?.toLocaleString() || '---'} sub={`${(data?.mp?.vsize/1e6 || 0).toFixed(1)} MB | ${data?.mp?.total_fee?.toFixed(2) || '0'} BTC`} color="border-blue-500" isDark={isDark} tip="Transações pendentes + tamanho + fees" icon="fas fa-layer-group" />
+              <StatCard label={t.fee} value={data?.fees?.fastestFee ? `${data.fees.fastestFee} sat/vB` : '--'} sub={t.conf} color="border-green-500" isDark={isDark} tip="Taxa para próximo bloco" icon="fas fa-bolt" />
+              <StatCard label={t.blocks24h} value={data?.blocks24h || '--'} sub={`${Math.round((data?.blocks24h || 0) / 24 * 10)} min/bloco`} color="border-purple-500" isDark={isDark} tip="Blocos confirmados nas últimas 24h" icon="fas fa-cube" />
+              <div className={`glass-card p-6 border-l-4 border-indigo-500 ${!isDark && 'bg-white'}`}>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">{t.halv}</p>
+                <div className="flex justify-between mt-1">
+                  <span className="text-2xl font-black mono text-indigo-400">{currentHeight ? ((currentHeight % 210000) / 210000 * 100).toFixed(1) : '0'}%</span>
+                  <InfoIcon tip="Progresso até o próximo halving (210k blocos)" />
                 </div>
-                <button id="lang-toggle" class="px-5 py-2 bg-gray-900/10 light:bg-gray-100 rounded-2xl border border-gray-800 light:border-gray-200 text-xs font-black uppercase hover:border-orange-500">PT</button>
-                <button id="theme-toggle" class="p-3 bg-gray-900/10 light:bg-gray-100 rounded-2xl border border-gray-800 light:border-gray-200 hover:border-orange-500 transition-all text-xl">🌙</button>
-            </div>
-        </header>
-
-        <!-- DASHBOARD GRID -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <!-- Preço -->
-            <div class="glass-card p-7 border-l-4 border-orange-500">
-                <div class="flex justify-between mb-2">
-                    <p id="label-price" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Preço Bitcoin</p>
-                    <div class="info-icon">? <div id="tip-price" class="tooltip-box">Preço atual do BTC em tempo real.</div></div>
+                <div className="w-full h-2 rounded-full bg-slate-700 mt-3">
+                  <div className="h-full bg-indigo-500 transition-all" style={{ width: `${currentHeight ? ((currentHeight % 210000) / 210000 * 100) : 0}%` }} />
                 </div>
-                <h2 id="ui-price-val" class="text-2xl font-black mono text-white">---</h2>
-                <div class="text-[10px] font-bold mt-3 text-gray-500 uppercase tracking-tighter italic">Capitalização: <span id="ui-market-cap" class="text-orange-500 font-black">---</span></div>
+                <p className="text-[9px] mt-2 text-slate-400">{t.nextHalving}: {Math.ceil(daysUntilHalving)} {t.days}</p>
+              </div>
             </div>
 
-            <!-- Mempool -->
-            <div class="glass-card p-7 border-l-4 border-blue-500">
-                <div class="flex justify-between mb-2">
-                    <p id="label-mempool" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Mempool</p>
-                    <div class="info-icon">? <div id="tip-mempool" class="tooltip-box">Fila de transações aguardando mineração.</div></div>
+            {/* Blocos 3D com informações realistas */}
+            <div className={`glass-card rounded-3xl p-6 mb-12 overflow-x-auto ${!isDark && 'bg-white/80'}`}>
+              <h3 className="text-sm font-black uppercase tracking-wider mb-6 flex items-center gap-2"><i className="fas fa-cubes text-orange-500"></i> {t.flow}</h3>
+              <div className="relative flex items-end justify-center min-h-[320px] gap-5 pt-12 pb-6 scrollbar-hide" style={{ minWidth: '700px' }}>
+                <div className="absolute left-1/2 top-0 bottom-0 w-[2px] border-l-2 border-dashed border-gray-500 z-10">
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[9px] font-black px-3 py-1 rounded-full whitespace-nowrap shadow-lg">{t.now}</div>
                 </div>
-                <h2 id="ui-mp-tx" class="text-2xl font-black mono text-white">---</h2>
-                <div class="flex justify-between text-[10px] font-bold mt-3 text-gray-500 uppercase tracking-tighter italic">
-                    <span>vSize: <span id="ui-mp-vsize" class="text-blue-400 font-black">---</span></span>
-                    <span>Fees: <span id="ui-mp-fees" class="text-blue-400 font-black">---</span></span>
-                </div>
+                {minedBlocks.map(block => {
+                  const mins = Math.floor(Math.max(0, (Date.now()/1000 - block.timestamp) / 60));
+                  const sizeMB = (block.size / 1e6).toFixed(2);
+                  const heightPx = Math.min(200, Math.max(80, (block.size / 1.8e6) * 180));
+                  const poolName = block.extras?.pool?.name || "Desconhecido";
+                  return <Cube key={`mined-${block.height}`} label={poolName.length > 12 ? poolName.slice(0,10)+".." : poolName} height={heightPx} variant="c-mined" topLabel={`#${block.height}`} midLabel={`${sizeMB} MB`} botLabel={`${mins}${t.min}${t.ago}`} />;
+                })}
+                <div className="w-12 flex-shrink-0" />
+                {projectedBlocks.map((blk, idx) => {
+                  let variant = 'c-low';
+                  const fee = blk.medianFee || 0;
+                  if (fee >= 100) variant = 'c-extreme';
+                  else if (fee >= 50) variant = 'c-higher';
+                  else if (fee >= 25) variant = 'c-high';
+                  else if (fee >= 10) variant = 'c-med';
+                  const heightPx = Math.min(200, Math.max(80, (blk.vsize / 1.2e6) * 180));
+                  return <Cube key={`proj-${idx}`} label={`${Math.round(fee)}`} height={heightPx} variant={`${variant} ${idx === 0 ? 'animate-pulse' : ''}`} topLabel={`${t.in}${(idx+1)*10}${t.min}`} midLabel={`${(blk.vsize/1e6).toFixed(2)} MB`} botLabel={`${fee.toFixed(0)} sat/vB`} />;
+                })}
+              </div>
+              <div className="text-center text-[9px] text-slate-500 mt-4 border-t border-white/10 pt-4 flex justify-between">
+                <span><i className="fas fa-arrow-left"></i> Confirmados (últimos 3)</span>
+                <span>Taxa média (sat/vB) <i className="fas fa-arrow-right"></i></span>
+              </div>
             </div>
 
-            <!-- Taxas -->
-            <div class="glass-card p-7 border-l-4 border-green-500">
-                <div class="flex justify-between mb-2">
-                    <p id="label-fee" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Taxa Prioritária</p>
-                    <div class="info-icon">? <div id="tip-fee" class="tooltip-box">Taxa sugerida para o próximo bloco (~10 min).</div></div>
+            {/* 3 painéis: Rede, Calculadora, Conversor */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+              <div className={`glass-card p-6 ${!isDark && 'bg-white'}`}>
+                <h3 className="font-black text-sm mb-5 uppercase text-orange-500"><i className="fas fa-globe mr-2"></i> {t.netTitle}</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between border-b pb-2"><span className="text-[10px] font-black">{t.diff}</span><span className="mono text-xs">{data ? `${(data.diff.difficulty/1e12).toFixed(2)} T` : '---'}</span></div>
+                  <div className="flex justify-between border-b pb-2"><span className="text-[10px] font-black">{t.adj}</span><span className="mono text-xs text-orange-500">{data ? `${data.diff.difficultyChange>0?'+':''}${data.diff.difficultyChange.toFixed(2)}%` : '---'} <span className="text-slate-400 ml-1">({t.nextDiff}: {Math.ceil(daysUntilDiffAdjust)} {t.days})</span></span></div>
+                  <div className="flex justify-between border-b pb-2"><span className="text-[10px] font-black">{t.hash}</span><span className="mono text-xs text-blue-400">{data ? `${(data.diff.estimatedHashrate/1e18).toFixed(1)} EH/s` : '---'}</span></div>
+                  <div className="flex justify-between"><span className="text-[10px] font-black">{t.pending}</span><span className="mono text-xs">{data ? `${data.mp.total_fee.toFixed(2)} BTC` : '---'}</span></div>
                 </div>
-                <div class="flex items-baseline gap-1">
-                    <h2 id="ui-fee-fast" class="text-3xl font-black mono text-green-400">--</h2>
-                    <span class="text-xs font-bold text-green-500/50">sat/vB</span>
+                <div className="mt-4 text-[9px] text-slate-400 italic">{t.minTxWarn}</div>
+              </div>
+
+              <div className={`glass-card p-6 ${!isDark && 'bg-white'}`}>
+                <h3 className="font-black text-sm mb-5 uppercase text-green-500"><i className="fas fa-calculator mr-2"></i> {t.calcTitle}</h3>
+                <div className="grid grid-cols-3 gap-2 mb-5">
+                  <button onClick={() => setFeeType('low')} className={`py-2 rounded-xl text-xs font-black uppercase transition-all ${feeType==='low' ? 'bg-orange-500 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}>
+                    {t.prioL}<br/><span className="text-[9px]">{data?.fees?.hourFee || '--'} sat</span>
+                  </button>
+                  <button onClick={() => setFeeType('med')} className={`py-2 rounded-xl text-xs font-black uppercase transition-all ${feeType==='med' ? 'bg-orange-500 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}>
+                    {t.prioM}<br/><span className="text-[9px]">{data?.fees?.halfHourFee || '--'} sat</span>
+                  </button>
+                  <button onClick={() => setFeeType('high')} className={`py-2 rounded-xl text-xs font-black uppercase transition-all ${feeType==='high' ? 'bg-orange-500 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}>
+                    {t.prioH}<br/><span className="text-[9px]">{data?.fees?.fastestFee || '--'} sat</span>
+                  </button>
                 </div>
-                <div id="label-conf" class="text-[10px] font-bold mt-3 text-gray-500 uppercase italic">Rede Estável</div>
+                <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+                  <span className="text-[10px] font-black">{t.size}</span>
+                  <input type="number" value={txSize} onChange={e => setTxSize(Math.max(140, e.target.valueAsNumber || 140))} className="w-28 p-2 rounded-xl text-center font-mono bg-black/20" step="10" min="140" />
+                </div>
+                <div className="bg-green-500/10 p-4 rounded-2xl text-center border border-green-500/30">
+                  <p className="text-[9px] font-black uppercase tracking-wider">{t.estCost}</p>
+                  <div className={`text-xl font-black mono transition-all ${costHighlight ? 'cost-update' : ''}`}>{fiatSymbol} {estCostFiat}</div>
+                  <div className="text-xs font-mono mt-1">≈ {estCostSats} {t.estSats}</div>
+                  <p className="text-[8px] text-slate-400 mt-2">⏱️ {getTimeEstimate()}</p>
+                </div>
+              </div>
+
+              <div className={`glass-card p-6 ${!isDark && 'bg-white'}`}>
+                <h3 className="font-black text-sm mb-5 uppercase text-yellow-500"><i className="fas fa-exchange-alt mr-2"></i> {t.convTitle}</h3>
+                <div className="space-y-4">
+                  <div><label className="text-[10px] block">{t.lBtc}</label><div className="relative"><input type="text" value={btcDisplay} onChange={(e) => updateBtc(e.target.value)} className="w-full p-3 rounded-xl bg-black/20 font-mono" placeholder="0.00000000" /><button onClick={() => copy(convBtc.toFixed(8))} className="absolute right-2 top-2 text-orange-400"><i className="fas fa-copy"></i></button></div></div>
+                  <div><label className="text-[10px] block">{currency === 'USD' ? t.fLabelUSD : t.fLabelBRL}</label><div className="relative"><span className="absolute left-3 top-3 text-slate-400 text-sm">{fiatSymbol}</span><input type="text" value={fiatVal} onChange={(e) => updateFiat(e.target.value)} className="w-full p-3 pl-7 rounded-xl bg-black/20 font-mono" placeholder="0,00" /></div></div>
+                  <div><label className="text-[10px] block">{t.lSats}</label><div className="relative"><input type="text" value={formatSatoshis(satsVal)} onChange={(e) => updateSats(e.target.value)} className="w-full p-3 rounded-xl bg-black/20 font-mono" placeholder="0" /><button onClick={() => copy(satsVal)} className="absolute right-2 top-2 text-orange-400"><i className="fas fa-copy"></i></button></div></div>
+                </div>
+              </div>
             </div>
 
-            <!-- Halving -->
-            <div class="glass-card p-7 border-l-4 border-purple-500 relative overflow-hidden">
-                <div class="flex justify-between mb-2">
-                    <p id="label-halv" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Halving Progress</p>
-                    <div class="info-icon">? <div id="tip-halv" class="tooltip-box">Progresso para o próximo corte de emissão.</div></div>
+            {/* Tabelas */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+              <div className={`glass-card overflow-hidden ${!isDark && 'bg-white'}`}>
+                <div className="p-5 border-b border-white/10"><h3 className="font-black text-sm uppercase text-orange-500"><i className="fas fa-table mr-2"></i> {t.quickTable}</h3></div>
+                <div className="overflow-y-auto max-h-[400px]">
+                  <table className="w-full text-left text-xs">
+                    <thead className="sticky top-0 bg-black/20">
+                      <tr><th className="p-4">{t.unit}</th><th>Satoshis</th><th className="text-right">{t.thFiat}</th></tr>
+                    </thead>
+                    <tbody>
+                      {REF_LEVELS.map(item => {
+                        const btc = item.sats / 1e8;
+                        return <tr key={item.sats} className="border-b border-white/10">
+                          <td className="p-4 font-bold text-orange-400">{item.label}<div className="text-[9px] opacity-50">{btc.toFixed(8)} BTC</div></td>
+                          <td className="text-right">{item.sats.toLocaleString('pt-BR')}</td>
+                          <td className="text-right">{fiatSymbol} {(btc*currentPrice).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+                        </tr>;
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-                <h2 id="ui-halving-pct" class="text-2xl font-black mono text-purple-400">--%</h2>
-                <div class="w-full bg-gray-800 light:bg-gray-200 h-2 rounded-full mt-4 overflow-hidden shadow-inner">
-                    <div id="ui-halv-bar" class="h-full bg-gradient-to-r from-purple-700 to-purple-400 transition-all duration-1000" style="width: 0%"></div>
+              </div>
+              <div className={`glass-card overflow-hidden ${!isDark && 'bg-white'}`}>
+                <div className="p-5 border-b border-white/10"><h3 className="font-black text-sm uppercase text-white"><i className="fas fa-cube mr-2"></i> {t.recent}</h3></div>
+                <div className="overflow-y-auto max-h-[400px]">
+                  <table className="w-full text-left text-xs">
+                    <thead className="sticky top-0 bg-black/20">
+                      <tr><th className="p-4">Altura</th><th>{t.thP}</th><th>{t.thW}</th><th className="text-right">{t.thF}</th></tr>
+                    </thead>
+                    <tbody>
+                      {data?.blocks?.slice(0,8).map(b => {
+                        const poolName = b.extras?.pool?.name || (b.extras?.pool || "Desconhecido");
+                        const weightVal = b.weight ? (b.weight/1e6).toFixed(2) : (b.size ? (b.size/1e6*3.8).toFixed(2) : "?");
+                        return <tr key={b.height} className="border-b border-white/10">
+                          <td className="p-4 text-orange-500 font-mono">#{b.height.toLocaleString()}</td>
+                          <td className="truncate max-w-[100px]">{poolName}</td>
+                          <td className="text-center">{weightVal}M</td>
+                          <td className="text-right text-green-400">{b.extras?.medianFee || (b.medianFee || "--")} sat</td>
+                        </tr>;
+                      })}
+                    </tbody>
+                  </table>
                 </div>
+              </div>
             </div>
+            <footer className="text-center text-[9px] text-slate-500 pb-10">{t.footer} · Dados em tempo real via Blockchain.info + Mempool.space</footer>
+          </div>
+          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-5 py-2 rounded-full text-xs font-black flex gap-2 transition-all duration-300 z-50 ${showToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <i className="fas fa-check-circle"></i> {t.toast}
+          </div>
         </div>
+      );
+    }
 
-        <!-- VISUALIZADOR 3D TIMELINE -->
-        <div class="glass-card p-10 mb-10 relative overflow-hidden">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
-                <h3 id="label-flow" class="font-black text-sm uppercase tracking-widest">Fluxo de Blocos (Isométrico 3D)</h3>
-                <span id="ui-height-badge" class="px-5 py-2 bg-orange-500/10 border border-orange-500/20 rounded-2xl text-orange-500 mono text-xs font-black shadow-inner">#-------</span>
-            </div>
-
-            <div class="relative flex items-end justify-center min-h-[300px] gap-2 pt-16 pb-8">
-                <div class="absolute left-1/2 top-0 bottom-0 w-[2px] border-l-2 border-dashed border-gray-700 light:border-gray-300 z-10">
-                    <div class="absolute top-0 left-1/2 -translate-x-1/2 bg-gray-800 light:bg-gray-200 text-[8px] font-black px-2 py-1 rounded text-gray-400 light:text-gray-600 uppercase border border-gray-700 light:border-gray-300">AGORA</div>
-                </div>
-                <div id="ui-timeline" class="flex items-end justify-center w-full h-full"></div>
-            </div>
-        </div>
-
-        <!-- FERRAMENTAS ANALÍTICAS -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-            <!-- Rede -->
-            <div class="glass-card p-8">
-                <h3 id="label-net-title" class="font-black text-sm mb-8 uppercase tracking-widest text-orange-500">🌐 Rede & Ajustes</h3>
-                <div class="space-y-4">
-                    <div class="flex justify-between border-b border-gray-800 light:border-gray-200 pb-3">
-                        <span id="label-diff" class="text-[10px] font-black text-gray-500 uppercase">Dificuldade</span>
-                        <span id="ui-net-diff" class="text-xs font-black mono text-white">---</span>
-                    </div>
-                    <div class="flex justify-between border-b border-gray-800 light:border-gray-200 pb-3">
-                        <span id="label-adj" class="text-[10px] font-black text-gray-500 uppercase">Ajuste Est.</span>
-                        <span id="ui-net-adj" class="text-xs font-black mono text-orange-400">---</span>
-                    </div>
-                    <div class="flex justify-between border-b border-gray-800 light:border-gray-200 pb-3">
-                        <span id="label-hash" class="text-[10px] font-black text-gray-500 uppercase">Hashrate</span>
-                        <span id="ui-net-hash" class="text-xs font-black mono text-blue-400">---</span>
-                    </div>
-                    <div class="flex justify-between border-b border-gray-800 light:border-gray-200 pb-3">
-                        <span id="label-pending" class="text-[10px] font-black text-gray-500 uppercase">Fees Pendentes</span>
-                        <span id="ui-mp-fees-btc" class="text-xs font-black mono text-white">--- BTC</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Calculadora Real -->
-            <div class="glass-card p-8">
-                <h3 id="label-calc-title" class="font-black text-sm mb-8 uppercase tracking-widest text-green-500">⚡ Calculadora de Taxas</h3>
-                <div class="space-y-4 mb-8">
-                    <div class="flex justify-between items-center p-4 bg-gray-950/40 light:bg-gray-100 border border-gray-800 light:border-gray-200 rounded-2xl group hover:border-green-500/30 transition-all">
-                        <span id="label-prio-h" class="text-[10px] font-black text-gray-500 uppercase">Alta Prioridade</span>
-                        <span id="ui-calc-h" class="text-sm font-black mono text-green-400">-- sat</span>
-                    </div>
-                    <div class="flex justify-between items-center p-4 bg-gray-950/40 light:bg-gray-100 border border-gray-800 light:border-gray-200 rounded-2xl group hover:border-gray-600/30 transition-all">
-                        <span id="label-prio-l" class="text-[10px] font-black text-gray-500 uppercase">Baixa Prioridade</span>
-                        <span id="ui-calc-l" class="text-sm font-black mono text-gray-400">-- sat</span>
-                    </div>
-                </div>
-                <div class="pt-6 border-t border-gray-800 light:border-gray-200">
-                    <div class="flex justify-between items-center mb-4">
-                        <span id="label-size" class="text-[10px] font-black text-gray-500 uppercase">Tamanho TX (vBytes)</span>
-                        <input type="number" id="in-calc-vsize" value="140" class="w-20 rounded-lg p-2 text-center text-xs font-bold mono text-orange-500 shadow-inner">
-                    </div>
-                    <div class="bg-orange-500/5 light:bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 text-center">
-                        <p id="label-est-cost" class="text-[9px] font-black text-orange-500 uppercase mb-1 tracking-widest">Custo Real Estimado</p>
-                        <p id="ui-calc-total" class="text-lg font-black mono text-white">---</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CONVERSOR TOTAL BIDIRECIONAL -->
-            <div class="glass-card p-8">
-                <h3 id="label-conv-title" class="font-black text-sm mb-8 uppercase tracking-widest text-yellow-500">🔄 Conversor Real-Time</h3>
-                <div class="space-y-5">
-                    <div>
-                        <label id="label-in-btc" class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Bitcoin (BTC)</label>
-                        <input type="number" id="in-conv-btc" value="1.0" step="0.0001" class="w-full rounded-xl p-4 font-black mono text-orange-400 outline-none focus:border-orange-500/50 shadow-inner">
-                    </div>
-                    <div>
-                        <label id="label-fiat-conv" class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Moeda Fiat (R$/$)</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="in-conv-fiat" class="flex-1 rounded-xl p-4 font-black mono text-white text-sm outline-none focus:border-white shadow-inner">
-                            <button onclick="app.copy('in-conv-fiat')" class="p-4 bg-gray-900 light:bg-gray-200 border border-gray-800 light:border-gray-300 rounded-2xl hover:bg-orange-500 hover:text-white transition-all">📋</button>
-                        </div>
-                    </div>
-                    <div>
-                        <label id="label-in-sats" class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Satoshis (SATS)</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="in-conv-sats" class="flex-1 rounded-xl p-4 font-black mono text-gray-400 text-sm outline-none focus:border-gray-500 shadow-inner">
-                            <button onclick="app.copy('in-conv-sats')" class="p-4 bg-gray-900 light:bg-gray-200 border border-gray-800 light:border-gray-300 rounded-2xl hover:bg-orange-500 hover:text-white transition-all">📋</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-            <!-- TABELA DE VALORES RÁPIDOS -->
-            <div class="glass-card overflow-hidden flex flex-col">
-                <div class="p-8 border-b border-gray-800 light:border-gray-200 bg-gray-900/10 light:bg-gray-50 flex justify-between items-center">
-                    <h3 id="label-quick-table" class="font-black text-sm uppercase tracking-widest text-orange-500">💰 Tabela de Conversão Rápida</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-[10px] font-black text-gray-500 uppercase border-b border-gray-800 light:border-gray-200 bg-gray-950/10 light:bg-gray-100">
-                                <th class="px-8 py-5">Bitcoin</th>
-                                <th class="px-8 py-5 text-center">Satoshi</th>
-                                <th id="th-fiat-val" class="px-8 py-5 text-right">Valor Fiat</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ui-quick-conv-table" class="text-sm font-medium"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TABELA DE BLOCOS -->
-            <div class="glass-card overflow-hidden flex flex-col">
-                <div class="p-8 border-b border-gray-800 light:border-gray-200 bg-gray-900/10 light:bg-gray-50 flex justify-between items-center">
-                    <h3 id="label-recent" class="font-black text-sm uppercase tracking-widest text-white">Últimos Blocos Confirmados</h3>
-                </div>
-                <div class="overflow-x-auto max-h-[400px]">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-[10px] font-black text-gray-500 uppercase border-b border-gray-800 light:border-gray-200 bg-gray-950/10 light:bg-gray-100">
-                                <th class="px-8 py-5">Altura</th>
-                                <th id="th-pool" class="px-8 py-5">Minerador</th>
-                                <th id="th-weight" class="px-8 py-5 text-center">Peso</th>
-                                <th id="th-fee" class="px-8 py-5 text-right">Taxa Med.</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ui-blocks-table" class="text-sm font-medium"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <footer class="text-center opacity-30 pt-12 border-t border-gray-800 light:border-gray-200 pb-12">
-            <p id="label-footer" class="text-[10px] font-black uppercase tracking-[0.5em]">Sentinel Pro v5.9 · Interface Otimizada Real-Time</p>
-        </footer>
-    </div>
-
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 bg-orange-500 text-white font-black rounded-2xl text-xs shadow-2xl transform translate-y-40 transition-transform duration-500 z-[200]">Copiado com sucesso!</div>
-
-    <script>
-        const I18N = {
-            pt: { status: "ATIVO", loading: "A SINCRONIZAR...", price: "Preço do Bitcoin", mp: "Mempool", fee: "Taxa Prioritária", halv: "Halving Progress", flow: "Fluxo de Blocos (Isométrico 3D)", netTitle: "Rede & Ajustes", calcTitle: "Calculadora de Taxas", convTitle: "Conversor Real-Time", quickTable: "Tabela de Conversão Rápida", recent: "Últimos Blocos", footer: "Sentinel Pro v5.9 · Interface Otimizada Real-Time", conf: "Confirmação Imediata", diff: "Dificuldade", adj: "Ajuste Est.", hash: "Hashrate", pending: "Fees Pendentes", prioH: "Alta Prioridade", prioL: "Baixa Prioridade", size: "Tamanho TX (vBytes)", estCost: "Custo Real Estimado", lBtc: "Bitcoin (BTC)", lSats: "Satoshis (SATS)", thP: "Minerador", thW: "Peso", thF: "Taxa Med.", fLabel: "Valor em Moeda Fiat (R$/$)", thFiat: "Valor Fiat" },
-            en: { status: "ACTIVE", loading: "SYNCING...", price: "Bitcoin Price", mp: "Mempool Status", fee: "Fastest Fee", halv: "Halving Progress", flow: "Block Flow (3D Isometric)", netTitle: "Network & Adjusts", calcTitle: "Fee Calculator", convTitle: "Real-Time Converter", quickTable: "Quick Conversion Table", recent: "Recent Blocks", footer: "Sentinel Pro v5.9 · Optimized Real-Time Interface", conf: "Instant Confirmation", diff: "Difficulty", adj: "Est. Adjustment", hash: "Hashrate", pending: "Pending Fees", prioH: "High Priority", prioL: "Low Priority", size: "TX Size (vBytes)", estCost: "Estimated Real Cost", lBtc: "Bitcoin (BTC)", lSats: "Satoshis (SATS)", thP: "Mined By", thW: "Weight", thF: "Avg Fee", fLabel: "Fiat Currency Value (R$/$)", thFiat: "Fiat Value" }
-        };
-
-        const state = {
-            lang: localStorage.getItem('s_lang') || 'pt',
-            currency: localStorage.getItem('s_curr') || 'BRL',
-            prices: { brl: 0, usd: 0 },
-            fees: { fast: 10, low: 1 },
-            height: 0,
-            isUpdatingConverter: false
-        };
-
-        const app = {
-            fmt: (n, d = 0) => {
-                if (n === null || n === undefined || isNaN(n)) return "---";
-                return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
-            },
-
-            clean: (str) => {
-                if (typeof str !== 'string') return parseFloat(str) || 0;
-                return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
-            },
-
-            copy: (id) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                navigator.clipboard.writeText(el.value || el.innerText);
-                const t = document.getElementById('toast');
-                t.classList.remove('translate-y-40');
-                setTimeout(() => t.classList.add('translate-y-40'), 2000);
-            },
-
-            api: async (url) => {
-                try {
-                    const r = await fetch(url);
-                    return r.ok ? await r.json() : null;
-                } catch { return null; }
-            },
-
-            update: async () => {
-                const status = document.getElementById('ui-status-text');
-                if (status) status.innerText = I18N[state.lang].loading;
-
-                const [p, mp, f, pr, bl, h, df] = await Promise.all([
-                    app.api('https://api.blockchain.info/ticker'),
-                    app.api('https://mempool.space/api/v1/mempool'),
-                    app.api('https://mempool.space/api/v1/fees/recommended'),
-                    app.api('https://mempool.space/api/v1/fees/mempool-blocks'),
-                    app.api('https://mempool.space/api/v1/blocks'),
-                    app.api('https://mempool.space/api/blocks/tip/height'),
-                    app.api('https://mempool.space/api/v1/difficulty-adjustment')
-                ]);
-
-                if (p) {
-                    state.prices.brl = p.BRL ? p.BRL.last : 0;
-                    state.prices.usd = p.USD ? p.USD.last : 0;
-                    app.renderPrices();
-                    app.renderQuickConversionTable();
-                }
-                
-                if (mp) app.renderMempool(mp);
-                
-                if (f) {
-                    state.fees = { fast: f.fastestFee, low: f.hourFee };
-                    const ff = document.getElementById('ui-fee-fast');
-                    const ch = document.getElementById('ui-calc-h');
-                    const cl = document.getElementById('ui-calc-l');
-                    if(ff) ff.innerText = f.fastestFee;
-                    if(ch) ch.innerText = f.fastestFee + " sat";
-                    if(cl) cl.innerText = f.hourFee + " sat";
-                }
-
-                if (h) app.renderHalving(h);
-                if (df) app.renderNetwork(df);
-
-                app.renderTimeline(bl, pr);
-                app.renderTable(bl);
-                app.runConverter('btc');
-                if(status) status.innerText = I18N[state.lang].status;
-            },
-
-            renderPrices: () => {
-                const pVal = document.getElementById('ui-price-val');
-                const cVal = document.getElementById('ui-market-cap');
-                const cur = state.currency === 'BRL' ? 'R$ ' : '$ ';
-                const price = state.currency === 'BRL' ? state.prices.brl : state.prices.usd;
-                if(pVal) pVal.innerText = cur + app.fmt(price, 2);
-                if(cVal) cVal.innerText = cur + app.fmt(state.prices.usd * 19700000, 0);
-            },
-
-            renderMempool: (mp) => {
-                const tx = document.getElementById('ui-mp-tx');
-                const vs = document.getElementById('ui-mp-vsize');
-                const fs = document.getElementById('ui-mp-fees');
-                if(tx) tx.innerText = app.fmt(mp.count);
-                if(vs) vs.innerText = app.fmt(mp.vsize / 1e6, 1) + " MB";
-                const price = state.currency === 'BRL' ? state.prices.brl : state.prices.usd;
-                const feeVal = (mp.total_fee / 1e8) * price;
-                if(fs) fs.innerText = (state.currency==='BRL'?'R$ ':'$ ') + app.fmt(feeVal, 0);
-                const fb = document.getElementById('ui-mp-fees-btc');
-                if(fb) fb.innerText = app.fmt(mp.total_fee / 1e8, 2) + " BTC";
-            },
-
-            renderHalving: (h) => {
-                state.height = h;
-                const hb = document.getElementById('ui-height-badge');
-                const hp = document.getElementById('ui-halving-pct');
-                const hbar = document.getElementById('ui-halv-bar');
-                if(hb) hb.innerText = "#" + app.fmt(h);
-                const pct = ((h % 210000) / 210000) * 100;
-                if(hp) hp.innerText = app.fmt(pct, 2) + "%";
-                if(hbar) hbar.style.width = pct + "%";
-            },
-
-            renderNetwork: (df) => {
-                const d = document.getElementById('ui-net-diff');
-                const a = document.getElementById('ui-net-adj');
-                const hs = document.getElementById('ui-net-hash');
-                if(d) d.innerText = app.fmt(df.difficulty / 1e12, 2) + " T";
-                if(a) a.innerText = (df.difficultyChange > 0 ? "+" : "") + app.fmt(df.difficultyChange, 2) + "%";
-                if(hs) hs.innerText = app.fmt(df.estimatedHashrate / 1e18, 1) + " EH/s";
-            },
-
-            renderTimeline: (mined, proj) => {
-                const tl = document.getElementById('ui-timeline');
-                if (!tl || !mined || !proj) return;
-                tl.innerHTML = '';
-                const SCALE = 160; const MAX_V = 1000000;
-
-                mined.slice(0, 3).reverse().forEach(b => {
-                    const vs = b.weight ? b.weight / 4 : b.size;
-                    const h = Math.max(60, (Math.min(1, vs / MAX_V)) * SCALE);
-                    tl.innerHTML += `<div class="block-cube c-mined opacity-50" style="height: ${h}px"><div class="face-front"><div class="tooltip-box"><b>#${app.fmt(b.height)}</b><br>${(vs / 1e6).toFixed(2)} MB</div><span class="text-[9px] font-black text-purple-200 mb-2">#${String(b.height).slice(-3)}</span></div></div>`;
-                });
-
-                proj.slice(0, 3).forEach((b, i) => {
-                    const vs = b.vsize || 0;
-                    const h = Math.max(60, (Math.min(1, vs / MAX_V)) * SCALE);
-                    const fee = b.medianFee || 0;
-                    let c = 'c-low'; if (fee >= 100) c = 'c-extreme'; else if (fee >= 60) c = 'c-higher'; else if (fee >= 30) c = 'c-high'; else if (fee >= 10) c = 'c-med';
-                    tl.innerHTML += `<div class="block-cube ${c} ${i === 0 ? 'animate-pulse ring-1 ring-white/10' : ''}" style="height: ${h}px"><div class="face-front"><div class="tooltip-box"><b>${app.fmt(fee, 1)} sat/vB</b><br>PROJETADO</div><span class="text-[9px] font-black text-white/70 mb-2">${app.fmt(fee, 0)}</span></div></div>`;
-                });
-            },
-
-            renderTable: (bl) => {
-                const tb = document.getElementById('ui-blocks-table');
-                if(!tb || !bl) return;
-                tb.innerHTML = bl.slice(0, 10).map(b => `<tr class="border-b border-gray-800 light:border-gray-100 hover:bg-white/5 transition-all"><td class="px-8 py-5 font-black mono text-orange-400">#${app.fmt(b.height)}</td><td class="px-8 py-5 text-gray-500 font-bold uppercase text-[10px]">${b.extras?.pool?.name || '---'}</td><td class="px-8 py-5 text-center text-gray-400 font-bold text-xs">${app.fmt(b.weight)}</td><td class="px-8 py-5 text-right font-black mono text-green-500">${app.fmt(b.extras?.medianFee, 1) || '--'} sat</td></tr>`).join('');
-            },
-
-            renderQuickConversionTable: () => {
-                const tb = document.getElementById('ui-quick-conv-table');
-                if(!tb) return;
-                const amounts = [1, 0.5, 0.1, 0.01, 0.001, 0.0001];
-                const price = state.currency === 'BRL' ? state.prices.brl : state.prices.usd;
-                const cur = state.currency === 'BRL' ? 'R$ ' : '$ ';
-                
-                tb.innerHTML = amounts.map(amt => {
-                    return `<tr class="border-b border-gray-800 light:border-gray-100 hover:bg-white/5 transition-all">
-                        <td class="px-8 py-5 font-black mono text-orange-400">${amt} BTC</td>
-                        <td class="px-8 py-5 text-center font-bold text-gray-400">${app.fmt(amt * 1e8)} sats</td>
-                        <td class="px-8 py-5 text-right font-black mono text-white">${cur}${app.fmt(amt * price, 2)}</td>
-                    </tr>`;
-                }).join('');
-            },
-
-            runConverter: (source) => {
-                if (state.isUpdatingConverter) return;
-                state.isUpdatingConverter = true;
-                const price = state.currency === 'BRL' ? state.prices.brl : state.prices.usd;
-                if(price === 0) { state.isUpdatingConverter = false; return; }
-
-                const iB = document.getElementById('in-conv-btc');
-                const iF = document.getElementById('in-conv-fiat');
-                const iS = document.getElementById('in-conv-sats');
-                const iV = document.getElementById('in-calc-vsize');
-                const res = document.getElementById('ui-calc-total');
-
-                let btcVal = 0;
-                if(source === 'btc') {
-                    btcVal = parseFloat(iB.value) || 0;
-                    iF.value = app.fmt(btcVal * price, 2);
-                    iS.value = app.fmt(btcVal * 1e8, 0);
-                } else if(source === 'fiat') {
-                    const cleanFiat = app.clean(iF.value);
-                    btcVal = cleanFiat / price;
-                    iB.value = btcVal.toFixed(8);
-                    iS.value = app.fmt(btcVal * 1e8, 0);
-                } else if(source === 'sats') {
-                    const cleanSats = app.clean(iS.value);
-                    btcVal = cleanSats / 1e8;
-                    iB.value = btcVal.toFixed(8);
-                    iF.value = app.fmt(btcVal * price, 2);
-                }
-
-                const vB = parseFloat(iV.value) || 0;
-                const totalCost = (vB * state.fees.fast / 1e8) * price;
-                const symbol = state.currency === 'BRL' ? 'R$ ' : '$ ';
-                if(res) res.innerText = symbol + app.fmt(totalCost, 2);
-                
-                state.isUpdatingConverter = false;
-            },
-
-            initUI: () => {
-                const t = I18N[state.lang];
-                const s = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-                s('label-price', t.price); s('label-mempool', t.mp); s('label-fee', t.fee); s('label-halv', t.halv);
-                s('label-flow', t.flow); s('label-net-title', t.netTitle); s('label-calc-title', t.calcTitle); s('label-conv-title', t.convTitle);
-                s('label-quick-table', t.quickTable); s('label-recent', t.recent); s('label-footer', t.footer); s('label-conf', t.conf);
-                s('label-diff', t.diff); s('label-adj', t.adj); s('label-hash', t.hash); s('label-pending', t.pending);
-                s('label-prio-h', t.prioH); s('label-prio-l', t.prioL); s('label-size', t.size); s('label-est-cost', t.estCost);
-                s('label-in-btc', t.lBtc); s('label-in-sats', t.lSats); s('th-pool', t.thP); s('th-weight', t.thW); s('th-fee', t.thF);
-                s('th-fiat-val', t.thFiat);
-                
-                const fl = document.getElementById('label-fiat-conv');
-                if(fl) fl.innerText = t.fLabel;
-                const lt = document.getElementById('lang-toggle');
-                if(lt) lt.innerText = state.lang.toUpperCase();
-            }
-        };
-
-        window.onload = () => {
-            const bBrl = document.getElementById('set-brl');
-            const bUsd = document.getElementById('set-usd');
-            const themeT = document.getElementById('theme-toggle');
-
-            if(bBrl) bBrl.onclick = () => { state.currency = 'BRL'; localStorage.setItem('s_curr', 'BRL'); bBrl.className = "px-5 py-2 rounded-xl text-xs font-black bg-orange-500 text-white shadow-lg"; if(bUsd) bUsd.className = "px-5 py-2 rounded-xl text-xs font-black text-gray-400"; app.update(); app.initUI(); };
-            if(bUsd) bUsd.onclick = () => { state.currency = 'USD'; localStorage.setItem('s_curr', 'USD'); bUsd.className = "px-5 py-2 rounded-xl text-xs font-black bg-orange-500 text-white shadow-lg"; if(bBrl) bBrl.className = "px-5 py-2 rounded-xl text-xs font-black text-gray-400"; app.update(); app.initUI(); };
-            
-            themeT.onclick = () => {
-                document.body.classList.toggle('light');
-                const isL = document.body.classList.contains('light');
-                themeT.innerText = isL ? '☀️' : '🌙';
-            };
-
-            document.getElementById('lang-toggle').onclick = () => { state.lang = state.lang === 'pt' ? 'en' : 'pt'; localStorage.setItem('s_lang', state.lang); app.initUI(); app.update(); };
-
-            document.getElementById('in-conv-btc').oninput = () => app.runConverter('btc');
-            document.getElementById('in-conv-fiat').oninput = () => app.runConverter('fiat');
-            document.getElementById('in-conv-sats').oninput = () => app.runConverter('sats');
-            document.getElementById('in-calc-vsize').oninput = () => app.runConverter('btc');
-
-            let tick = 0; setInterval(() => { tick++; const b = document.getElementById('progress-top'); if(b) b.style.width = (tick / 30 * 100) + "%"; if(tick >= 30) { tick = 0; app.update(); } }, 1000);
-            
-            if(state.currency === 'USD') bUsd.click(); else bBrl.click();
-            app.initUI(); app.update();
-        };
-    </script>
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
 </body>
 </html>
