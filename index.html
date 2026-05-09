@@ -3,595 +3,94 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Sentinel Pro · Bitcoin Mempool Dashboard</title>
+  <title>Sentinel Pro · Calculadora Consistente</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
   <style>
-    /* 3D cube effect */
-    .block-cube {
-      position: relative;
-      width: 80px;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      transform-style: preserve-3d;
-    }
-    .face-front {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 2;
-      box-shadow: inset 0 1px 2px rgba(255,255,255,0.2);
-      border: 1px solid rgba(0,0,0,0.2);
-      padding: 10px;
-      background: inherit;
-    }
-    .block-cube::before {
-      content: '';
-      position: absolute;
-      top: -14px;
-      left: 7px;
-      width: 100%;
-      height: 14px;
-      background: rgba(255,255,255,0.25);
-      transform: skewX(-45deg);
-      border-radius: 6px 6px 0 0;
-      z-index: 1;
-      pointer-events: none;
-    }
-    .block-cube::after {
-      content: '';
-      position: absolute;
-      top: -7px;
-      right: -14px;
-      width: 14px;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      transform: skewY(-45deg);
-      border-radius: 0 8px 8px 0;
-      z-index: 1;
-      pointer-events: none;
-    }
-    .block-cube:hover {
-      transform: scale(1.05) translateY(-12px);
-      filter: brightness(1.1);
-      z-index: 50;
-    }
-    /* color variants for blocks */
+    .block-cube { position: relative; width: 80px; transition: all 0.3s ease; cursor: pointer; transform-style: preserve-3d; }
+    .face-front { position: relative; width: 100%; height: 100%; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; z-index: 2; box-shadow: inset 0 1px 2px rgba(255,255,255,0.2); border: 1px solid rgba(0,0,0,0.2); padding: 10px; background: inherit; }
+    .block-cube::before { content: ''; position: absolute; top: -14px; left: 7px; width: 100%; height: 14px; background: rgba(255,255,255,0.25); transform: skewX(-45deg); border-radius: 6px 6px 0 0; z-index: 1; pointer-events: none; }
+    .block-cube::after { content: ''; position: absolute; top: -7px; right: -14px; width: 14px; height: 100%; background: rgba(0,0,0,0.5); transform: skewY(-45deg); border-radius: 0 8px 8px 0; z-index: 1; pointer-events: none; }
+    .block-cube:hover { transform: scale(1.05) translateY(-12px); filter: brightness(1.1); z-index: 50; }
     .c-mined .face-front { background: linear-gradient(145deg, #4b6cb7, #182848); color: white; }
     .c-extreme .face-front { background: linear-gradient(145deg, #ff44ff, #9b2eb3); color: white; }
     .c-higher .face-front { background: linear-gradient(145deg, #e53935, #b71c1c); color: white; }
     .c-high .face-front { background: linear-gradient(145deg, #f7931a, #c45c00); color: white; }
     .c-med .face-front { background: linear-gradient(145deg, #fdd835, #f9a825); color: black; }
     .c-low .face-front { background: linear-gradient(145deg, #3baa7c, #1e6b4f); color: white; }
-    /* glass morphism */
-    .glass-card {
-      background: rgba(10,12,16,0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 32px;
-      transition: all 0.2s;
-    }
-    body.light .glass-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-    }
-    /* pulse animation */
-    .pulse {
-      width: 10px;
-      height: 10px;
-      background: #24d27d;
-      border-radius: 50%;
-      animation: pulse-anim 2s infinite;
-    }
-    @keyframes pulse-anim {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(36,210,125,0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0); }
-    }
+    .glass-card { background: rgba(10,12,16,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 32px; transition: all 0.2s; }
+    body.light .glass-card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+    .pulse { width: 10px; height: 10px; background: #24d27d; border-radius: 50%; animation: pulse-anim 2s infinite; }
+    @keyframes pulse-anim { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(36,210,125,0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(36,210,125,0); } }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .mono { font-family: 'SF Mono', 'Menlo', monospace; }
     .cost-update { animation: highlight 0.5s ease; }
-    @keyframes highlight {
-      0% { background: rgba(245,158,11,0.3); }
-      100% { background: transparent; }
-    }
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button { opacity: 0.5; }
+    @keyframes highlight { 0% { background: rgba(245,158,11,0.3); } 100% { background: transparent; } }
+    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { opacity: 0.5; }
   </style>
 </head>
 <body id="body-root" style="background:#0a0c10;">
   <div id="root"></div>
   <script type="text/babel">
-    // ----------------------------- I18N ------------------------------------
-    const I18N = {
-      pt: {
-        status: "REDE ATIVA", loading: "SINCRONIZANDO...", price: "Preço BTC", mp: "Mempool",
-        fee: "Taxa Rápida", halv: "Halving", flow: "Fluxo de Blocos 3D", now: "AGORA",
-        in: "Em ~", min: " min", ago: " atrás", conf: "Confirmação rápida",
-        prioH: "Alta (1 bloco)", prioM: "Média (3 blocos)", prioL: "Baixa (6+ blocos)",
-        size: "Tamanho TX (vBytes)", estCost: "Custo Estimado", estSats: "Custo em SATS",
-        netTitle: "Rede & Ajustes", calcTitle: "Calculadora", convTitle: "Conversor",
-        quickTable: "Tabela Referência", recent: "Últimos Blocos", footer: "Sentinel Pro v8.5",
-        diff: "Dificuldade", adj: "Ajuste Est.", hash: "Hashrate", pending: "Fees Pendentes",
-        lBtc: "BTC", lSats: "SATS", thP: "Minerador", thW: "Peso", thF: "Taxa Média",
-        fLabelBRL: "REAIS", fLabelUSD: "DÓLARES", thFiat: "Valor Fiat", toast: "Copiado!",
-        unit: "Unidade", lastUpdate: "Última atualização", blocks24h: "Blocos 24h",
-        nextHalving: "Próx. Halving", nextDiff: "Próx. Ajuste", days: "dias", minTxWarn: "Mínimo: 140 vBytes",
-        timeEstHigh: "~10 min (próximo bloco)", timeEstMed: "~30 min (3º bloco)", timeEstLow: "~60+ min (6º+ bloco)",
-        fallbackNote: " (dados simulados)"
-      },
-      en: {
-        status: "ACTIVE", loading: "SYNCING...", price: "BTC Price", mp: "Mempool",
-        fee: "Fast Fee", halv: "Halving", flow: "3D Block Flow", now: "NOW",
-        in: "In ~", min: " min", ago: " ago", conf: "Fast confirm",
-        prioH: "High (1 block)", prioM: "Medium (3 blocks)", prioL: "Low (6+ blocks)",
-        size: "TX Size (vBytes)", estCost: "Estimated Cost", estSats: "Cost in SATS",
-        netTitle: "Network & Adjusts", calcTitle: "Calculator", convTitle: "Converter",
-        quickTable: "Reference Table", recent: "Recent Blocks", footer: "Sentinel Pro v8.5",
-        diff: "Difficulty", adj: "Est. Adjustment", hash: "Hashrate", pending: "Pending Fees",
-        lBtc: "BTC", lSats: "SATS", thP: "Mined By", thW: "Weight", thF: "Avg Fee",
-        fLabelBRL: "REAIS", fLabelUSD: "DOLLARS", thFiat: "Fiat Value", toast: "Copied!",
-        unit: "Unit", lastUpdate: "Last update", blocks24h: "Blocks 24h",
-        nextHalving: "Next Halving", nextDiff: "Next Adjustment", days: "days", minTxWarn: "Min: 140 vBytes",
-        timeEstHigh: "~10 min (next block)", timeEstMed: "~30 min (3rd block)", timeEstLow: "~60+ min (6th+ block)",
-        fallbackNote: " (simulated)"
-      }
-    };
-
-    // Reference levels for quick table
-    const REF_LEVELS = [
-      { label: '1 Sat', sats: 1 }, { label: '100 Sats', sats: 100 },
-      { label: '1k Sats', sats: 1000 }, { label: '10k Sats', sats: 10000 },
-      { label: '50k Sats', sats: 50000 }, { label: '100k (mBTC)', sats: 100000 },
-      { label: '500k Sats', sats: 500000 }, { label: '1M (1% BTC)', sats: 1000000 },
-      { label: '10M (10% BTC)', sats: 10000000 }, { label: '21M (Supply)', sats: 21000000 },
-      { label: '100M (1 BTC)', sats: 100000000 }
-    ];
-
-    // ----------------------------- Utils -----------------------------------
-    function parseNumberFromLocale(str) {
-      if (str === undefined || str === null || str === '') return 0;
-      let s = String(str).trim().replace(/[^\d,.-]/g, '');
-      if (s === '') return 0;
-      let lastComma = s.lastIndexOf(',');
-      let lastDot = s.lastIndexOf('.');
-      if (lastComma > lastDot && lastComma !== -1) {
-        let decimalPart = s.substring(lastComma + 1);
-        s = s.substring(0, lastComma).replace(/\./g, '') + '.' + decimalPart;
-      } else if (lastDot > lastComma && lastDot !== -1) {
-        let decimalPart = s.substring(lastDot + 1);
-        s = s.substring(0, lastDot).replace(/,/g, '') + '.' + decimalPart;
-      } else {
-        s = s.replace(/,/g, '').replace(/\./g, '');
-      }
-      const num = parseFloat(s);
-      return isNaN(num) ? 0 : Math.max(0, num);
-    }
-
-    function formatSatoshis(sats) { return sats.toLocaleString('pt-BR'); }
-    
-    function parseSatoshisFromString(str) {
-      if (!str) return 0;
-      const digits = String(str).replace(/\D/g, '');
-      const num = parseInt(digits, 10);
-      return isNaN(num) ? 0 : Math.max(0, num);
-    }
-
-    // Realistic fallback data when APIs fail
-    function generateRealisticFallback() {
-      const now = Date.now() / 1000;
-      const genesisTime = 1230940800;
-      const secondsSinceGenesis = now - genesisTime;
-      const estimatedHeight = Math.floor(secondsSinceGenesis / 600) + 1;
-      const baseHeight = Math.max(840000, Math.min(estimatedHeight, 950000));
-      
-      const pools = ["Foundry USA", "Antpool", "F2Pool", "ViaBTC", "Binance Pool", "Marathon", "Luxor", "SpiderPool"];
-      const blocks = [];
-      for (let i = 0; i < 10; i++) {
-        const timestamp = now - (i * 600) - Math.random() * 300;
-        const height = baseHeight - i;
-        const pool = pools[Math.floor(Math.random() * pools.length)];
-        const medianFee = 5 + Math.floor(Math.random() * 45);
-        const weight = 3.92e6 + Math.random() * 0.15e6;
-        const size = weight / 3.8;
-        blocks.push({
-          height, size, timestamp, weight,
-          extras: { pool: { name: pool }, medianFee }
-        });
-      }
-      
-      const projected = [
-        { vsize: 1.32e6, medianFee: 25 + Math.floor(Math.random() * 12) },
-        { vsize: 1.18e6, medianFee: 15 + Math.floor(Math.random() * 10) },
-        { vsize: 0.95e6, medianFee: 7 + Math.floor(Math.random() * 6) }
-      ];
-      
-      return {
-        mp: { count: 7500 + Math.floor(Math.random() * 5000), vsize: 35e6 + Math.random() * 18e6, total_fee: 0.58 + Math.random() * 0.6 },
-        fees: { fastestFee: 26 + Math.floor(Math.random() * 12), halfHourFee: 16 + Math.floor(Math.random() * 8), hourFee: 6 + Math.floor(Math.random() * 6) },
-        projected, blocks, height: baseHeight,
-        diff: { difficulty: 108.5e12, difficultyChange: 1.8 + (Math.random() * 2 - 1), estimatedHashrate: 660e18 + Math.random() * 50e18 },
-        blocks24h: 138 + Math.floor(Math.random() * 14)
-      };
-    }
-
-    async function safeFetch(url) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const ct = res.headers.get('content-type');
-        if (ct && ct.includes('application/json')) return await res.json();
-        return null;
-      } catch { return null; }
-    }
-
-    // ----------------------------- Components ------------------------------
-    const InfoIcon = ({ tip }) => (
-      <div className="group relative cursor-help">
-        <div className="flex items-center justify-center w-4 h-4 text-[10px] font-extrabold rounded-full bg-orange-500/10 border border-orange-500/40 text-orange-500">?</div>
-        <div className="invisible group-hover:visible absolute bottom-[150%] left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] p-3 rounded-2xl w-44 text-center shadow-2xl border border-white/10 z-50 pointer-events-none font-bold">{tip}</div>
-      </div>
-    );
-
-    const Cube = ({ label, height, variant, topLabel, midLabel, botLabel }) => (
-      <div className={`block-cube flex-shrink-0 ${variant}`} style={{ height: `${Math.min(220, Math.max(80, height))}px` }}>
-        <div className="face-front">
-          <span className="text-[8px] font-black opacity-50 uppercase tracking-tighter">{topLabel}</span>
-          <div className="flex flex-col items-center">
-            <span className="text-[12px] font-black font-mono leading-tight">{midLabel}</span>
-            <span className="text-[8px] font-bold opacity-70 mt-1">{botLabel}</span>
-          </div>
-          <span className="text-[9px] font-black opacity-40 font-mono">{label}</span>
-        </div>
-      </div>
-    );
-
-    const StatCard = ({ label, value, sub, color, isDark, tip, icon }) => (
-      <div className={`glass-card p-6 border-l-4 ${color} transition-all hover:scale-[1.01] ${!isDark && 'bg-white'}`}>
-        <div className="flex justify-between mb-2">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">{label}</p>
-          <InfoIcon tip={tip} />
-        </div>
-        <div className="flex items-center gap-2">
-          <i className={`${icon} text-lg ${color.replace('border-','text-')}`}></i>
-          <h2 className="text-xl font-black mono">{value}</h2>
-        </div>
-        <p className="text-[9px] font-bold mt-3 text-slate-500 uppercase italic opacity-60">{sub}</p>
-      </div>
-    );
-
-    // ----------------------------- Main App ---------------------------------
+    const I18N = { pt: { status: "REDE ATIVA", loading: "SINCRONIZANDO...", price: "Preço BTC", mp: "Mempool", fee: "Taxa Rápida", halv: "Halving", flow: "Fluxo de Blocos 3D", now: "AGORA", in: "Em ~", min: " min", ago: " atrás", conf: "Confirmação rápida", prioH: "Alta (1 bloco)", prioM: "Média (3 blocos)", prioL: "Baixa (6+ blocos)", size: "Tamanho TX (vBytes)", estCost: "Custo Estimado", estSats: "Custo em SATS", netTitle: "Rede & Ajustes", calcTitle: "Calculadora", convTitle: "Conversor", quickTable: "Tabela Referência", recent: "Últimos Blocos", footer: "Sentinel Pro v8.5", diff: "Dificuldade", adj: "Ajuste Est.", hash: "Hashrate", pending: "Fees Pendentes", lBtc: "BTC", lSats: "SATS", thP: "Minerador", thW: "Peso", thF: "Taxa Média", fLabelBRL: "REAIS", fLabelUSD: "DÓLARES", thFiat: "Valor Fiat", toast: "Copiado!", unit: "Unidade", lastUpdate: "Última atualização", blocks24h: "Blocos 24h", nextHalving: "Próx. Halving", nextDiff: "Próx. Ajuste", days: "dias", minTxWarn: "Mínimo: 140 vBytes", timeEstHigh: "~10 min (próximo bloco)", timeEstMed: "~30 min (3º bloco)", timeEstLow: "~60+ min (6º+ bloco)", fallbackNote: " (dados simulados)" }, en: { status: "ACTIVE", loading: "SYNCING...", price: "BTC Price", mp: "Mempool", fee: "Fast Fee", halv: "Halving", flow: "3D Block Flow", now: "NOW", in: "In ~", min: " min", ago: " ago", conf: "Fast confirm", prioH: "High (1 block)", prioM: "Medium (3 blocks)", prioL: "Low (6+ blocks)", size: "TX Size (vBytes)", estCost: "Estimated Cost", estSats: "Cost in SATS", netTitle: "Network & Adjusts", calcTitle: "Calculator", convTitle: "Converter", quickTable: "Reference Table", recent: "Recent Blocks", footer: "Sentinel Pro v8.5", diff: "Difficulty", adj: "Est. Adjustment", hash: "Hashrate", pending: "Pending Fees", lBtc: "BTC", lSats: "SATS", thP: "Mined By", thW: "Weight", thF: "Avg Fee", fLabelBRL: "REAIS", fLabelUSD: "DOLLARS", thFiat: "Fiat Value", toast: "Copied!", unit: "Unit", lastUpdate: "Last update", blocks24h: "Blocks 24h", nextHalving: "Next Halving", nextDiff: "Next Adjustment", days: "days", minTxWarn: "Min: 140 vBytes", timeEstHigh: "~10 min (next block)", timeEstMed: "~30 min (3rd block)", timeEstLow: "~60+ min (6th+ block)", fallbackNote: " (simulated)" } };
+    const REF_LEVELS = [{ label: '1 Sat', sats: 1 }, { label: '100 Sats', sats: 100 }, { label: '1k Sats', sats: 1000 }, { label: '10k Sats', sats: 10000 }, { label: '50k Sats', sats: 50000 }, { label: '100k (mBTC)', sats: 100000 }, { label: '500k Sats', sats: 500000 }, { label: '1M (1% BTC)', sats: 1000000 }, { label: '10M (10% BTC)', sats: 10000000 }, { label: '21M (Supply)', sats: 21000000 }, { label: '100M (1 BTC)', sats: 100000000 }];
     const { useState, useEffect, useCallback, useMemo } = React;
-
-    function App() {
-      const [lang, setLang] = useState('pt');
-      const [currency, setCurrency] = useState('BRL');
-      const [isDark, setIsDark] = useState(true);
-      const [data, setData] = useState(null);
-      const [prices, setPrices] = useState({ brl: 0, usd: 0 });
-      const [tick, setTick] = useState(0);
-      const [status, setStatus] = useState('sync');
-      const [lastUpdate, setLastUpdate] = useState(null);
-      const [convBtc, setConvBtc] = useState(0.001);
-      const [txSize, setTxSize] = useState(140);
-      const [feeType, setFeeType] = useState('high');
-      const [showToast, setShowToast] = useState(false);
-      const [costHighlight, setCostHighlight] = useState(false);
-      const [isFallback, setIsFallback] = useState(false);
-
-      const t = I18N[lang];
-      const currentPrice = useMemo(() => {
-        const price = currency === 'BRL' ? prices.brl : prices.usd;
-        return isNaN(price) || price === 0 ? 0 : price;
-      }, [currency, prices]);
-      const fiatSymbol = currency === 'BRL' ? 'R$' : '$';
-
-      // Data fetching
-      const fetchData = useCallback(async () => {
-        setStatus('sync');
-        setIsFallback(false);
-        
-        const [ticker, mempool, fees, projBlocks, blocksList, heightData, diffData] = await Promise.all([
-          safeFetch('https://api.blockchain.info/ticker'),
-          safeFetch('https://mempool.space/api/v1/mempool'),
-          safeFetch('https://mempool.space/api/v1/fees/recommended'),
-          safeFetch('https://mempool.space/api/v1/fees/mempool-blocks'),
-          safeFetch('https://mempool.space/api/v1/blocks'),
-          safeFetch('https://mempool.space/api/blocks/tip/height'),
-          safeFetch('https://mempool.space/api/v1/difficulty-adjustment')
-        ]);
-        
-        if (ticker) {
-          setPrices({ brl: ticker.BRL?.last || 0, usd: ticker.USD?.last || 0 });
-        } else {
-          setPrices({ brl: 289000, usd: 56800 });
-        }
-        
-        setLastUpdate(new Date().toLocaleTimeString(lang === 'pt' ? 'pt-BR' : 'en-US'));
-        
-        if (mempool && fees && projBlocks && blocksList && heightData && diffData) {
-          const blocks24h = blocksList.filter(b => (Date.now()/1000 - b.timestamp) <= 86400).length;
-          setData({
-            mp: mempool, fees, projected: projBlocks, blocks: blocksList.slice(0, 10),
-            height: heightData, diff: diffData, blocks24h
-          });
-          setStatus('active');
-        } else {
-          const fallbackData = generateRealisticFallback();
-          setData(fallbackData);
-          setStatus('active');
-          setIsFallback(true);
-          if (!ticker) setPrices({ brl: 292500 + Math.random() * 8000, usd: 57200 + Math.random() * 1500 });
-        }
-      }, [lang]);
-
-      useEffect(() => {
-        fetchData();
-        const interval = setInterval(() => {
-          setTick(prev => {
-            if (prev >= 29) { fetchData(); return 0; }
-            return prev + 1;
-          });
-        }, 1000);
-        return () => clearInterval(interval);
-      }, [fetchData]);
-
-      useEffect(() => {
-        document.body.classList.toggle('light', !isDark);
-        document.body.style.backgroundColor = isDark ? '#0a0c10' : '#f8fafc';
-      }, [isDark]);
-
-      // Fee calculation
-      const activeFee = useMemo(() => {
-        if (!data) return 20;
-        if (feeType === 'high') return data.fees.fastestFee;
-        if (feeType === 'med') return data.fees.halfHourFee;
-        return data.fees.hourFee;
-      }, [data, feeType]);
-
-      const txSizeValid = Math.max(140, Math.min(10000, txSize));
-      const totalSatsCost = txSizeValid * activeFee;
-      const btcCost = totalSatsCost / 1e8;
-      const fiatCost = btcCost * currentPrice;
-      const estCostFiat = !isNaN(fiatCost) && isFinite(fiatCost) ? fiatCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00';
-      const estCostSats = Math.floor(totalSatsCost).toLocaleString('pt-BR');
-
-      useEffect(() => {
-        setCostHighlight(true);
-        const timer = setTimeout(() => setCostHighlight(false), 500);
-        return () => clearTimeout(timer);
-      }, [currentPrice, activeFee, txSize]);
-
-      const getTimeEstimate = useCallback(() => {
-        if (feeType === 'high') return t.timeEstHigh;
-        if (feeType === 'med') return t.timeEstMed;
-        return t.timeEstLow;
-      }, [feeType, t]);
-
-      // Converter handlers
-      const updateBtc = (val) => setConvBtc(parseNumberFromLocale(val));
-      const updateFiat = (val) => {
-        if (currentPrice > 0) {
-          const fiatNum = parseNumberFromLocale(val);
-          if (!isNaN(fiatNum)) setConvBtc(fiatNum / currentPrice);
-        }
-      };
-      const updateSats = (val) => setConvBtc(parseSatoshisFromString(val) / 1e8);
-      
-      const fiatVal = (!isNaN(convBtc * currentPrice) && isFinite(convBtc * currentPrice))
-        ? (convBtc * currentPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        : '0,00';
-      const satsVal = Math.floor(convBtc * 1e8);
-      const btcDisplay = convBtc.toFixed(8).replace(/\.?0+$/, '');
-      const copy = (txt) => { navigator.clipboard.writeText(String(txt)); setShowToast(true); setTimeout(() => setShowToast(false), 2000); };
-
-      // Halving & difficulty progress
-      const currentHeight = data?.height || 0;
-      const blocksUntilHalving = currentHeight ? 210000 - (currentHeight % 210000) : 210000;
-      const daysUntilHalving = (blocksUntilHalving * 10) / (24 * 60);
-      const blocksUntilDiffAdjust = currentHeight ? 2016 - (currentHeight % 2016) : 2016;
-      const daysUntilDiffAdjust = (blocksUntilDiffAdjust * 10) / (24 * 60);
-
-      const minedBlocks = data?.blocks?.slice(0, 3).reverse() || [];
-      const projectedBlocks = data?.projected?.slice(0, 3) || [];
-
-      return (
-        <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-          {/* Top progress bar */}
-          <div className="fixed top-0 left-0 w-full h-1 bg-zinc-800 z-50">
-            <div className="h-full bg-orange-500 transition-all duration-1000" style={{ width: `${(tick / 30) * 100}%` }} />
-          </div>
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            {/* Header */}
-            <div className="flex flex-wrap justify-between items-center mb-10 gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-orange-500 rounded-2xl shadow-xl"><i className="fas fa-cubes text-white text-2xl"></i></div>
-                <div>
-                  <h1 className="text-2xl font-black uppercase tracking-tighter">Sentinel <span className="text-orange-500">Pro</span></h1>
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 mt-1">
-                    <div className="pulse"></div>
-                    <span>{status === 'active' ? t.status : t.loading}</span>
-                    {isFallback && <span className="text-yellow-400 text-[8px] ml-1">{t.fallbackNote}</span>}
-                    <button onClick={fetchData} className="ml-2 hover:text-orange-400"><i className="fas fa-sync-alt"></i></button>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="flex p-1 rounded-xl bg-white/10">
-                  <button onClick={() => setCurrency('BRL')} className={`px-3 py-1 rounded-lg text-xs font-black ${currency === 'BRL' ? 'bg-orange-500 text-white' : ''}`}>BRL</button>
-                  <button onClick={() => setCurrency('USD')} className={`px-3 py-1 rounded-lg text-xs font-black ${currency === 'USD' ? 'bg-orange-500 text-white' : ''}`}>USD</button>
-                </div>
-                <button onClick={() => setLang(lang === 'pt' ? 'en' : 'pt')} className="px-4 py-1 rounded-xl text-xs font-black border border-white/20">{lang.toUpperCase()}</button>
-                <button onClick={() => setIsDark(!isDark)} className="px-3 py-1 rounded-xl border border-white/20">
-                  <i className={`fas ${isDark ? 'fa-sun' : 'fa-moon'}`}></i>
-                </button>
-              </div>
-            </div>
-
-            {/* 5 stats cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-10">
-              <StatCard label={t.price} value={`${fiatSymbol} ${(currentPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`} sub={`${t.lastUpdate}: ${lastUpdate || '--'}`} color="border-orange-500" isDark={isDark} tip="Preço BTC em tempo real" icon="fas fa-chart-line" />
-              <StatCard label={t.mp} value={data?.mp?.count?.toLocaleString() || '---'} sub={`${(data?.mp?.vsize/1e6 || 0).toFixed(1)} MB | ${data?.mp?.total_fee?.toFixed(2) || '0'} BTC`} color="border-blue-500" isDark={isDark} tip="Transações pendentes + tamanho + fees" icon="fas fa-layer-group" />
-              <StatCard label={t.fee} value={data?.fees?.fastestFee ? `${data.fees.fastestFee} sat/vB` : '--'} sub={t.conf} color="border-green-500" isDark={isDark} tip="Taxa para próximo bloco" icon="fas fa-bolt" />
-              <StatCard label={t.blocks24h} value={data?.blocks24h || '--'} sub={`${Math.round((data?.blocks24h || 0) / 24 * 10)} min/bloco`} color="border-purple-500" isDark={isDark} tip="Blocos confirmados nas últimas 24h" icon="fas fa-cube" />
-              <div className={`glass-card p-6 border-l-4 border-indigo-500 ${!isDark && 'bg-white'}`}>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">{t.halv}</p>
-                <div className="flex justify-between mt-1">
-                  <span className="text-2xl font-black mono text-indigo-400">{currentHeight ? ((currentHeight % 210000) / 210000 * 100).toFixed(1) : '0'}%</span>
-                  <InfoIcon tip="Progresso até o próximo halving (210k blocos)" />
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-700 mt-3">
-                  <div className="h-full bg-indigo-500 transition-all" style={{ width: `${currentHeight ? ((currentHeight % 210000) / 210000 * 100) : 0}%` }} />
-                </div>
-                <p className="text-[9px] mt-2 text-slate-400">{t.nextHalving}: {Math.ceil(daysUntilHalving)} {t.days}</p>
-              </div>
-            </div>
-
-            {/* 3D Block Flow */}
-            <div className={`glass-card rounded-3xl p-6 mb-12 overflow-x-auto ${!isDark && 'bg-white/80'}`}>
-              <h3 className="text-sm font-black uppercase tracking-wider mb-6 flex items-center gap-2"><i className="fas fa-cubes text-orange-500"></i> {t.flow}</h3>
-              <div className="relative flex items-end justify-center min-h-[320px] gap-5 pt-12 pb-6 scrollbar-hide" style={{ minWidth: '700px' }}>
-                <div className="absolute left-1/2 top-0 bottom-0 w-[2px] border-l-2 border-dashed border-gray-500 z-10">
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[9px] font-black px-3 py-1 rounded-full whitespace-nowrap shadow-lg">{t.now}</div>
-                </div>
-                {minedBlocks.map(block => {
-                  const mins = Math.floor(Math.max(0, (Date.now()/1000 - block.timestamp) / 60));
-                  const sizeMB = (block.size / 1e6).toFixed(2);
-                  const heightPx = Math.min(200, Math.max(80, (block.size / 1.8e6) * 180));
-                  const poolName = block.extras?.pool?.name || "Desconhecido";
-                  return <Cube key={`mined-${block.height}`} label={poolName.length > 12 ? poolName.slice(0,10)+".." : poolName} height={heightPx} variant="c-mined" topLabel={`#${block.height}`} midLabel={`${sizeMB} MB`} botLabel={`${mins}${t.min}${t.ago}`} />;
-                })}
-                <div className="w-12 flex-shrink-0" />
-                {projectedBlocks.map((blk, idx) => {
-                  let variant = 'c-low';
-                  const fee = blk.medianFee || 0;
-                  if (fee >= 100) variant = 'c-extreme';
-                  else if (fee >= 50) variant = 'c-higher';
-                  else if (fee >= 25) variant = 'c-high';
-                  else if (fee >= 10) variant = 'c-med';
-                  const heightPx = Math.min(200, Math.max(80, (blk.vsize / 1.2e6) * 180));
-                  return <Cube key={`proj-${idx}`} label={`${Math.round(fee)}`} height={heightPx} variant={`${variant} ${idx === 0 ? 'animate-pulse' : ''}`} topLabel={`${t.in}${(idx+1)*10}${t.min}`} midLabel={`${(blk.vsize/1e6).toFixed(2)} MB`} botLabel={`${fee.toFixed(0)} sat/vB`} />;
-                })}
-              </div>
-              <div className="text-center text-[9px] text-slate-500 mt-4 border-t border-white/10 pt-4 flex justify-between">
-                <span><i className="fas fa-arrow-left"></i> Confirmados (últimos 3)</span>
-                <span>Taxa média (sat/vB) <i className="fas fa-arrow-right"></i></span>
-              </div>
-            </div>
-
-            {/* Network, Calculator, Converter panels */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-              <div className={`glass-card p-6 ${!isDark && 'bg-white'}`}>
-                <h3 className="font-black text-sm mb-5 uppercase text-orange-500"><i className="fas fa-globe mr-2"></i> {t.netTitle}</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between border-b pb-2"><span className="text-[10px] font-black">{t.diff}</span><span className="mono text-xs">{data ? `${(data.diff.difficulty/1e12).toFixed(2)} T` : '---'}</span></div>
-                  <div className="flex justify-between border-b pb-2"><span className="text-[10px] font-black">{t.adj}</span><span className="mono text-xs text-orange-500">{data ? `${data.diff.difficultyChange>0?'+':''}${data.diff.difficultyChange.toFixed(2)}%` : '---'} <span className="text-slate-400 ml-1">({t.nextDiff}: {Math.ceil(daysUntilDiffAdjust)} {t.days})</span></span></div>
-                  <div className="flex justify-between border-b pb-2"><span className="text-[10px] font-black">{t.hash}</span><span className="mono text-xs text-blue-400">{data ? `${(data.diff.estimatedHashrate/1e18).toFixed(1)} EH/s` : '---'}</span></div>
-                  <div className="flex justify-between"><span className="text-[10px] font-black">{t.pending}</span><span className="mono text-xs">{data ? `${data.mp.total_fee.toFixed(2)} BTC` : '---'}</span></div>
-                </div>
-                <div className="mt-4 text-[9px] text-slate-400 italic">{t.minTxWarn}</div>
-              </div>
-
-              <div className={`glass-card p-6 ${!isDark && 'bg-white'}`}>
-                <h3 className="font-black text-sm mb-5 uppercase text-green-500"><i className="fas fa-calculator mr-2"></i> {t.calcTitle}</h3>
-                <div className="grid grid-cols-3 gap-2 mb-5">
-                  <button onClick={() => setFeeType('low')} className={`py-2 rounded-xl text-xs font-black uppercase transition-all ${feeType==='low' ? 'bg-orange-500 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}>
-                    {t.prioL}<br/><span className="text-[9px]">{data?.fees?.hourFee || '--'} sat</span>
-                  </button>
-                  <button onClick={() => setFeeType('med')} className={`py-2 rounded-xl text-xs font-black uppercase transition-all ${feeType==='med' ? 'bg-orange-500 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}>
-                    {t.prioM}<br/><span className="text-[9px]">{data?.fees?.halfHourFee || '--'} sat</span>
-                  </button>
-                  <button onClick={() => setFeeType('high')} className={`py-2 rounded-xl text-xs font-black uppercase transition-all ${feeType==='high' ? 'bg-orange-500 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}>
-                    {t.prioH}<br/><span className="text-[9px]">{data?.fees?.fastestFee || '--'} sat</span>
-                  </button>
-                </div>
-                <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                  <span className="text-[10px] font-black">{t.size}</span>
-                  <input type="number" value={txSize} onChange={e => setTxSize(Math.max(140, e.target.valueAsNumber || 140))} className="w-28 p-2 rounded-xl text-center font-mono bg-black/20" step="10" min="140" />
-                </div>
-                <div className="bg-green-500/10 p-4 rounded-2xl text-center border border-green-500/30">
-                  <p className="text-[9px] font-black uppercase tracking-wider">{t.estCost}</p>
-                  <div className={`text-xl font-black mono transition-all ${costHighlight ? 'cost-update' : ''}`}>{fiatSymbol} {estCostFiat}</div>
-                  <div className="text-xs font-mono mt-1">≈ {estCostSats} {t.estSats}</div>
-                  <p className="text-[8px] text-slate-400 mt-2">⏱️ {getTimeEstimate()}</p>
-                </div>
-              </div>
-
-              <div className={`glass-card p-6 ${!isDark && 'bg-white'}`}>
-                <h3 className="font-black text-sm mb-5 uppercase text-yellow-500"><i className="fas fa-exchange-alt mr-2"></i> {t.convTitle}</h3>
-                <div className="space-y-4">
-                  <div><label className="text-[10px] block">{t.lBtc}</label><div className="relative"><input type="text" value={btcDisplay} onChange={(e) => updateBtc(e.target.value)} className="w-full p-3 rounded-xl bg-black/20 font-mono" placeholder="0.00000000" /><button onClick={() => copy(convBtc.toFixed(8))} className="absolute right-2 top-2 text-orange-400"><i className="fas fa-copy"></i></button></div></div>
-                  <div><label className="text-[10px] block">{currency === 'USD' ? t.fLabelUSD : t.fLabelBRL}</label><div className="relative"><span className="absolute left-3 top-3 text-slate-400 text-sm">{fiatSymbol}</span><input type="text" value={fiatVal} onChange={(e) => updateFiat(e.target.value)} className="w-full p-3 pl-7 rounded-xl bg-black/20 font-mono" placeholder="0,00" /></div></div>
-                  <div><label className="text-[10px] block">{t.lSats}</label><div className="relative"><input type="text" value={formatSatoshis(satsVal)} onChange={(e) => updateSats(e.target.value)} className="w-full p-3 rounded-xl bg-black/20 font-mono" placeholder="0" /><button onClick={() => copy(satsVal)} className="absolute right-2 top-2 text-orange-400"><i className="fas fa-copy"></i></button></div></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tables */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-              <div className={`glass-card overflow-hidden ${!isDark && 'bg-white'}`}>
-                <div className="p-5 border-b border-white/10"><h3 className="font-black text-sm uppercase text-orange-500"><i className="fas fa-table mr-2"></i> {t.quickTable}</h3></div>
-                <div className="overflow-y-auto max-h-[400px]">
-                  <table className="w-full text-left text-xs">
-                    <thead className="sticky top-0 bg-black/20">
-                      <tr><th className="p-4">{t.unit}</th><th>Satoshis</th><th className="text-right">{t.thFiat}</th></tr>
-                    </thead>
-                    <tbody>
-                      {REF_LEVELS.map(item => {
-                        const btc = item.sats / 1e8;
-                        return <tr key={item.sats} className="border-b border-white/10">
-                          <td className="p-4 font-bold text-orange-400">{item.label}<div className="text-[9px] opacity-50">{btc.toFixed(8)} BTC</div></td>
-                          <td className="text-right">{item.sats.toLocaleString('pt-BR')}</td>
-                          <td className="text-right">{fiatSymbol} {(btc*currentPrice).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-                        </tr>;
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className={`glass-card overflow-hidden ${!isDark && 'bg-white'}`}>
-                <div className="p-5 border-b border-white/10"><h3 className="font-black text-sm uppercase text-white"><i className="fas fa-cube mr-2"></i> {t.recent}</h3></div>
-                <div className="overflow-y-auto max-h-[400px]">
-                  <table className="w-full text-left text-xs">
-                    <thead className="sticky top-0 bg-black/20">
-                      <tr><th className="p-4">Altura</th><th>{t.thP}</th><th>{t.thW}</th><th className="text-right">{t.thF}</th></tr>
-                    </thead>
-                    <tbody>
-                      {data?.blocks?.slice(0,8).map(b => {
-                        const poolName = b.extras?.pool?.name || (b.extras?.pool || "Desconhecido");
-                        const weightVal = b.weight ? (b.weight/1e6).toFixed(2) : (b.size ? (b.size/1e6*3.8).toFixed(2) : "?");
-                        return <tr key={b.height} className="border-b border-white/10">
-                          <td className="p-4 text-orange-500 font-mono">#{b.height.toLocaleString()}</td>
-                          <td className="truncate max-w-[100px]">{poolName}</td>
-                          <td className="text-center">{weightVal}M</td>
-                          <td className="text-right text-green-400">{b.extras?.medianFee || (b.medianFee || "--")} sat</td>
-                        </tr>;
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <footer className="text-center text-[9px] text-slate-500 pb-10">{t.footer} · Dados em tempo real via Blockchain.info + Mempool.space</footer>
-          </div>
-          {/* Toast notification */}
-          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-5 py-2 rounded-full text-xs font-black flex gap-2 transition-all duration-300 z-50 ${showToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <i className="fas fa-check-circle"></i> {t.toast}
-          </div>
+    const InfoIcon = ({ tip }) => ( <div className="group relative cursor-help"><div className="flex items-center justify-center w-4 h-4 text-[10px] font-extrabold rounded-full bg-orange-500/10 border border-orange-500/40 text-orange-500">?</div><div className="invisible group-hover:visible absolute bottom-[150%] left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] p-3 rounded-2xl w-44 text-center shadow-2xl border border-white/10 z-50 pointer-events-none font-bold">{tip}</div></div> );
+    const Cube = ({ label, height, variant, topLabel, midLabel, botLabel }) => ( <div className={`block-cube flex-shrink-0 ${variant}`} style={{ height: `${Math.min(220, Math.max(80, height))}px` }}><div className="face-front"><span className="text-[8px] font-black opacity-50 uppercase tracking-tighter">{topLabel}</span><div className="flex flex-col items-center"><span className="text-[12px] font-black font-mono leading-tight">{midLabel}</span><span className="text-[8px] font-bold opacity-70 mt-1">{botLabel}</span></div><span className="text-[9px] font-black opacity-40 font-mono">{label}</span></div></div> );
+    const StatCard = ({ label, value, sub, color, isDark, tip, icon }) => ( <div className={`glass-card p-6 border-l-4 ${color} transition-all hover:scale-[1.01] ${!isDark && 'bg-white'}`}><div className="flex justify-between mb-2"><p className="text-[10px] font-bold text-slate-400 uppercase">{label}</p><InfoIcon tip={tip} /></div><div className="flex items-center gap-2"><i className={`${icon} text-lg ${color.replace('border-','text-')}`}></i><h2 className="text-xl font-black mono">{value}</h2></div><p className="text-[9px] font-bold mt-3 text-slate-500 uppercase italic opacity-60">{sub}</p></div> );
+    function parseNumberFromLocale(str) { if (!str) return 0; let s = String(str).trim().replace(/[^\d,.-]/g, ''); if(s==='') return 0; let lastComma=s.lastIndexOf(','), lastDot=s.lastIndexOf('.'); if(lastComma>lastDot && lastComma!==-1){ let dec=s.substring(lastComma+1); s=s.substring(0,lastComma).replace(/\./g,'')+'.'+dec; } else if(lastDot>lastComma && lastDot!==-1){ let dec=s.substring(lastDot+1); s=s.substring(0,lastDot).replace(/,/g,'')+'.'+dec; } else { s=s.replace(/,/g,'').replace(/\./g,''); } let num=parseFloat(s); return isNaN(num)?0:Math.max(0,num); }
+    function formatSatoshis(sats){ return sats.toLocaleString('pt-BR'); }
+    function parseSatoshisFromString(str){ if(!str) return 0; let digits=String(str).replace(/\D/g,''); let num=parseInt(digits,10); return isNaN(num)?0:Math.max(0,num); }
+    async function safeFetch(url){ try{ let res=await fetch(url); if(!res.ok) return null; let ct=res.headers.get('content-type'); if(ct && ct.includes('application/json')) return await res.json(); return null; } catch{ return null; } }
+    function generateRealisticFallback(){ const now=Date.now()/1000; const genesisTime=1230940800; const secondsSinceGenesis=now-genesisTime; const estimatedHeight=Math.floor(secondsSinceGenesis/600)+1; const baseHeight=Math.max(840000,Math.min(estimatedHeight,950000)); const pools=["Foundry USA","Antpool","F2Pool","ViaBTC","Binance Pool","Marathon","Luxor","SpiderPool"]; let blocks=[]; for(let i=0;i<10;i++){ let timestamp=now-(i*600)-Math.random()*300; let height=baseHeight-i; let pool=pools[Math.floor(Math.random()*pools.length)]; let medianFee=5+Math.floor(Math.random()*45); let weight=3.92e6+Math.random()*0.15e6; let size=weight/3.8; blocks.push({height,size,timestamp,weight,extras:{pool:{name:pool},medianFee}}); } let projected=[{vsize:1.32e6,medianFee:25+Math.floor(Math.random()*12)},{vsize:1.18e6,medianFee:15+Math.floor(Math.random()*10)},{vsize:0.95e6,medianFee:7+Math.floor(Math.random()*6)}]; return { mp:{count:7500+Math.floor(Math.random()*5000),vsize:35e6+Math.random()*18e6,total_fee:0.58+Math.random()*0.6}, fees:{fastestFee:26+Math.floor(Math.random()*12),halfHourFee:16+Math.floor(Math.random()*8),hourFee:6+Math.floor(Math.random()*6)}, projected, blocks, height:baseHeight, diff:{difficulty:108.5e12,difficultyChange:1.8+(Math.random()*2-1),estimatedHashrate:660e18+Math.random()*50e18}, blocks24h:138+Math.floor(Math.random()*14) }; }
+    function App(){ const [lang,setLang]=useState('pt'); const [currency,setCurrency]=useState('BRL'); const [isDark,setIsDark]=useState(true); const [data,setData]=useState(null); const [fastData,setFastData]=useState({prices:{brl:0,usd:0},fees:null}); const [status,setStatus]=useState('sync'); const [lastUpdate,setLastUpdate]=useState(null); const [convBtc,setConvBtc]=useState(0.001); const [txSize,setTxSize]=useState(140); const [feeType,setFeeType]=useState('high'); const [showToast,setShowToast]=useState(false); const [costHighlight,setCostHighlight]=useState(false); const [isFallback,setIsFallback]=useState(false); const t=I18N[lang]; const currentPrice=useMemo(()=>{ let price=currency==='BRL'?fastData.prices.brl:fastData.prices.usd; return isNaN(price)||price===0?0:price; },[currency,fastData.prices]); const fiatSymbol=currency==='BRL'?'R$':'$';
+      const fetchFast=useCallback(async()=>{ let [ticker,fees]=await Promise.all([safeFetch('https://api.blockchain.info/ticker'),safeFetch('https://mempool.space/api/v1/fees/recommended')]); let newPrices={brl:fastData.prices.brl,usd:fastData.prices.usd}; if(ticker){ newPrices={brl:ticker.BRL?.last||0,usd:ticker.USD?.last||0}; } else if(fastData.prices.brl===0){ newPrices={brl:289000,usd:56800}; setIsFallback(true); } setFastData({prices:newPrices,fees:fees||fastData.fees}); },[fastData.prices, fastData.fees]);
+      const fetchFull=useCallback(async()=>{ setStatus('sync'); let [mempool,projBlocks,blocksList,heightData,diffData]=await Promise.all([safeFetch('https://mempool.space/api/v1/mempool'),safeFetch('https://mempool.space/api/v1/fees/mempool-blocks'),safeFetch('https://mempool.space/api/v1/blocks'),safeFetch('https://mempool.space/api/blocks/tip/height'),safeFetch('https://mempool.space/api/v1/difficulty-adjustment')]); if(mempool && projBlocks && blocksList && heightData && diffData){ let blocks24h=blocksList.filter(b=>(Date.now()/1000-b.timestamp)<=86400).length; setData({mp:mempool,projected:projBlocks,blocks:blocksList.slice(0,10),height:heightData,diff:diffData,blocks24h}); setStatus('active'); setIsFallback(false); } else { let fb=generateRealisticFallback(); setData(fb); setStatus('active'); setIsFallback(true); } setLastUpdate(new Date().toLocaleTimeString(lang==='pt'?'pt-BR':'en-US')); },[lang]);
+      useEffect(()=>{ fetchFast(); let iFast=setInterval(()=>fetchFast(),10000); return ()=>clearInterval(iFast); },[fetchFast]);
+      useEffect(()=>{ fetchFull(); let iFull=setInterval(()=>fetchFull(),30000); return ()=>clearInterval(iFull); },[fetchFull]);
+      useEffect(()=>{ document.body.classList.toggle('light',!isDark); document.body.style.backgroundColor=isDark?'#0a0c10':'#f8fafc'; },[isDark]);
+      const fees=useMemo(()=> fastData.fees || data?.fees || {fastestFee:20,halfHourFee:15,hourFee:8}, [fastData.fees, data]);
+      const activeFee= useMemo(()=> feeType==='high'?fees.fastestFee: feeType==='med'?fees.halfHourFee: fees.hourFee, [fees,feeType]);
+      const txSizeValid=Math.max(140,Math.min(10000,txSize)); const totalSatsCost=txSizeValid*activeFee; const btcCost=totalSatsCost/1e8; const fiatCost=btcCost*currentPrice;
+      const estCostFiat= !isNaN(fiatCost)&&isFinite(fiatCost)? fiatCost.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '0,00';
+      const estCostSats= Math.floor(totalSatsCost).toLocaleString('pt-BR');
+      useEffect(()=>{ setCostHighlight(true); let tm=setTimeout(()=>setCostHighlight(false),500); return ()=>clearTimeout(tm); },[currentPrice,activeFee,txSize]);
+      const getTimeEstimate=()=> feeType==='high'?t.timeEstHigh: feeType==='med'?t.timeEstMed: t.timeEstLow;
+      const updateBtc=(v)=>setConvBtc(parseNumberFromLocale(v));
+      const updateFiat=(v)=>{ if(currentPrice>0){ let f=parseNumberFromLocale(v); if(!isNaN(f)) setConvBtc(f/currentPrice); } };
+      const updateSats=(v)=>setConvBtc(parseSatoshisFromString(v)/1e8);
+      const fiatVal= (!isNaN(convBtc*currentPrice)&&isFinite(convBtc*currentPrice)) ? (convBtc*currentPrice).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '0,00';
+      const satsVal=Math.floor(convBtc*1e8); const btcDisplay=convBtc.toFixed(8).replace(/\.?0+$/,'');
+      const copy=(txt)=>{ navigator.clipboard.writeText(String(txt)); setShowToast(true); setTimeout(()=>setShowToast(false),2000); };
+      const currentHeight=data?.height||0; const blocksUntilHalving=currentHeight?210000-(currentHeight%210000):210000; const daysUntilHalving=(blocksUntilHalving*10)/(24*60); const blocksUntilDiffAdjust=currentHeight?2016-(currentHeight%2016):2016; const daysUntilDiffAdjust=(blocksUntilDiffAdjust*10)/(24*60);
+      const minedBlocks=data?.blocks?.slice(0,3).reverse()||[]; const projectedBlocks=data?.projected?.slice(0,3)||[];
+      return ( <div className={`min-h-screen transition-colors duration-500 ${isDark?'text-gray-200':'text-gray-800'}`}><div className="fixed top-0 left-0 w-full h-1 bg-zinc-800 z-50"><div className="h-full bg-orange-500 transition-all duration-1000" style={{width:`${( (new Date().getSeconds()%30)/30)*100}%`}} /></div><div className="max-w-7xl mx-auto px-4 py-8"><div className="flex flex-wrap justify-between items-center mb-10 gap-4"><div className="flex items-center gap-4"><div className="p-3 bg-orange-500 rounded-2xl shadow-xl"><i className="fas fa-cubes text-white text-2xl"></i></div><div><h1 className="text-2xl font-black uppercase tracking-tighter">Sentinel <span className="text-orange-500">Pro</span></h1><div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 mt-1"><div className="pulse"></div><span>{status==='active'?t.status:t.loading}</span>{isFallback&&<span className="text-yellow-400 text-[8px] ml-1">{t.fallbackNote}</span>}<button onClick={()=>{fetchFast();fetchFull();}} className="ml-2 hover:text-orange-400"><i className="fas fa-sync-alt"></i></button></div></div></div><div className="flex gap-3"><div className="flex p-1 rounded-xl bg-white/10"><button onClick={()=>setCurrency('BRL')} className={`px-3 py-1 rounded-lg text-xs font-black ${currency==='BRL'?'bg-orange-500 text-white':''}`}>BRL</button><button onClick={()=>setCurrency('USD')} className={`px-3 py-1 rounded-lg text-xs font-black ${currency==='USD'?'bg-orange-500 text-white':''}`}>USD</button></div><button onClick={()=>setLang(lang==='pt'?'en':'pt')} className="px-4 py-1 rounded-xl text-xs font-black border border-white/20">{lang.toUpperCase()}</button><button onClick={()=>setIsDark(!isDark)} className="px-3 py-1 rounded-xl border border-white/20"><i className={`fas ${isDark?'fa-sun':'fa-moon'}`}></i></button></div></div><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-10"><StatCard label={t.price} value={`${fiatSymbol} ${(currentPrice||0).toLocaleString(undefined,{minimumFractionDigits:2})}`} sub={`${t.lastUpdate}: ${lastUpdate||'--'}`} color="border-orange-500" isDark={isDark} tip="Preço BTC em tempo real" icon="fas fa-chart-line" /><StatCard label={t.mp} value={data?.mp?.count?.toLocaleString()||'---'} sub={`${(data?.mp?.vsize/1e6||0).toFixed(1)} MB | ${data?.mp?.total_fee?.toFixed(2)||'0'} BTC`} color="border-blue-500" isDark={isDark} tip="Transações pendentes + tamanho + fees" icon="fas fa-layer-group" /><StatCard label={t.fee} value={fees.fastestFee?`${fees.fastestFee} sat/vB`:'--'} sub={t.conf} color="border-green-500" isDark={isDark} tip="Taxa para próximo bloco" icon="fas fa-bolt" /><StatCard label={t.blocks24h} value={data?.blocks24h||'--'} sub={`${Math.round((data?.blocks24h||0)/24*10)} min/bloco`} color="border-purple-500" isDark={isDark} tip="Blocos confirmados nas últimas 24h" icon="fas fa-cube" /><div className={`glass-card p-6 border-l-4 border-indigo-500 ${!isDark&&'bg-white'}`}><p className="text-[10px] font-bold text-slate-400 uppercase">{t.halv}</p><div className="flex justify-between mt-1"><span className="text-2xl font-black mono text-indigo-400">{currentHeight?((currentHeight%210000)/210000*100).toFixed(1):'0'}%</span><InfoIcon tip="Progresso até o próximo halving (210k blocos)" /></div><div className="w-full h-2 rounded-full bg-slate-700 mt-3"><div className="h-full bg-indigo-500 transition-all" style={{width:`${currentHeight?((currentHeight%210000)/210000*100):0}%`}} /></div><p className="text-[9px] mt-2 text-slate-400">{t.nextHalving}: {Math.ceil(daysUntilHalving)} {t.days}</p></div></div><div className={`glass-card rounded-3xl p-6 mb-12 overflow-x-auto ${!isDark&&'bg-white/80'}`}><h3 className="text-sm font-black uppercase tracking-wider mb-6 flex items-center gap-2"><i className="fas fa-cubes text-orange-500"></i> {t.flow}</h3><div className="relative flex items-end justify-center min-h-[320px] gap-5 pt-12 pb-6 scrollbar-hide" style={{minWidth:'700px'}}><div className="absolute left-1/2 top-0 bottom-0 w-[2px] border-l-2 border-dashed border-gray-500 z-10"><div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[9px] font-black px-3 py-1 rounded-full whitespace-nowrap shadow-lg">{t.now}</div></div>{minedBlocks.map(block=>{ let mins=Math.floor(Math.max(0,(Date.now()/1000-block.timestamp)/60)); let sizeMB=(block.size/1e6).toFixed(2); let heightPx=Math.min(200,Math.max(80,(block.size/1.8e6)*180)); let poolName=block.extras?.pool?.name||"Desconhecido"; return <Cube key={`mined-${block.height}`} label={poolName.length>12?poolName.slice(0,10)+"..":poolName} height={heightPx} variant="c-mined" topLabel={`#${block.height}`} midLabel={`${sizeMB} MB`} botLabel={`${mins}${t.min}${t.ago}`} />;})}<div className="w-12 flex-shrink-0" />{projectedBlocks.map((blk,idx)=>{ let variant='c-low'; let fee=blk.medianFee||0; if(fee>=100) variant='c-extreme'; else if(fee>=50) variant='c-higher'; else if(fee>=25) variant='c-high'; else if(fee>=10) variant='c-med'; let heightPx=Math.min(200,Math.max(80,(blk.vsize/1.2e6)*180)); return <Cube key={`proj-${idx}`} label={`${Math.round(fee)}`} height={heightPx} variant={`${variant} ${idx===0?'animate-pulse':''}`} topLabel={`${t.in}${(idx+1)*10}${t.min}`} midLabel={`${(blk.vsize/1e6).toFixed(2)} MB`} botLabel={`${fee.toFixed(0)} sat/vB`} />;})}</div><div className="text-center text-[9px] text-slate-500 mt-4 border-t border-white/10 pt-4 flex justify-between"><span><i className="fas fa-arrow-left"></i> Confirmados (últimos 3)</span><span>Taxa média (sat/vB) <i className="fas fa-arrow-right"></i></span></div></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12"><div className={`glass-card p-6 ${!isDark&&'bg-white'}`}><h3 className="font-black text-sm mb-5 uppercase text-orange-500"><i className="fas fa-globe mr-2"></i> {t.netTitle}</h3><div className="space-y-3"><div className="flex justify-between border-b pb-2"><span className="text-[10px] font-black">{t.diff}</span><span className="mono text-xs">{data?`${(data.diff.difficulty/1e12).toFixed(2)} T`:'---'}</span></div><div className="flex justify-between border-b pb-2"><span className="text-[10px] font-black">{t.adj}</span><span className="mono text-xs text-orange-500">{data?`${data.diff.difficultyChange>0?'+':''}${data.diff.difficultyChange.toFixed(2)}%`:'---'} <span className="text-slate-400 ml-1">({t.nextDiff}: {Math.ceil(daysUntilDiffAdjust)} {t.days})</span></span></div><div className="flex justify-between border-b pb-2"><span className="text-[10px] font-black">{t.hash}</span><span className="mono text-xs text-blue-400">{data?`${(data.diff.estimatedHashrate/1e18).toFixed(1)} EH/s`:'---'}</span></div><div className="flex justify-between"><span className="text-[10px] font-black">{t.pending}</span><span className="mono text-xs">{data?`${data.mp.total_fee.toFixed(2)} BTC`:'---'}</span></div></div><div className="mt-4 text-[9px] text-slate-400 italic">{t.minTxWarn}</div></div>
+      {/* CALCULADORA CORRIGIDA */}
+      <div className={`glass-card p-6 ${!isDark && 'bg-white'}`}>
+        <h3 className="font-black text-sm mb-5 uppercase text-green-500"><i className="fas fa-calculator mr-2"></i> {t.calcTitle}</h3>
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          <button onClick={() => setFeeType('low')} className={`py-2 rounded-xl text-xs font-black uppercase transition-all ${feeType==='low' ? 'bg-orange-500 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}>{t.prioL}<br/><span className="text-[9px]">{fees.hourFee || '--'} sat</span></button>
+          <button onClick={() => setFeeType('med')} className={`py-2 rounded-xl text-xs font-black uppercase transition-all ${feeType==='med' ? 'bg-orange-500 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}>{t.prioM}<br/><span className="text-[9px]">{fees.halfHourFee || '--'} sat</span></button>
+          <button onClick={() => setFeeType('high')} className={`py-2 rounded-xl text-xs font-black uppercase transition-all ${feeType==='high' ? 'bg-orange-500 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}>{t.prioH}<br/><span className="text-[9px]">{fees.fastestFee || '--'} sat</span></button>
         </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+          <span className="text-[10px] font-black">{t.size}</span>
+          <input type="number" value={txSize} onChange={e => { let raw = e.target.value; if (raw === '') { setTxSize(140); } else { let num = Number(raw); if (!isNaN(num)) setTxSize(Math.max(140, Math.min(10000, num))); } }} className="w-28 p-2 rounded-xl text-center font-mono bg-black/20" step="10" min="140" />
+        </div>
+        <div className="bg-green-500/10 p-4 rounded-2xl text-center border border-green-500/30">
+          <p className="text-[9px] font-black uppercase tracking-wider">{t.estCost}</p>
+          {!currentPrice || !activeFee ? ( <div className="text-sm font-mono animate-pulse">Carregando...</div> ) : ( <>
+            <div className={`text-xl font-black mono transition-all ${costHighlight ? 'cost-update' : ''}`}>{fiatSymbol} {estCostFiat}</div>
+            <div className="text-xs font-mono mt-1">≈ {estCostSats} {t.estSats}</div>
+            <p className="text-[8px] text-slate-400 mt-2">⏱️ {getTimeEstimate()}</p>
+          </> )}
+        </div>
+      </div>
+      <div className={`glass-card p-6 ${!isDark&&'bg-white'}`}><h3 className="font-black text-sm mb-5 uppercase text-yellow-500"><i className="fas fa-exchange-alt mr-2"></i> {t.convTitle}</h3><div className="space-y-4"><div><label className="text-[10px] block">{t.lBtc}</label><div className="relative"><input type="text" value={btcDisplay} onChange={(e)=>updateBtc(e.target.value)} className="w-full p-3 rounded-xl bg-black/20 font-mono" placeholder="0.00000000" /><button onClick={()=>copy(convBtc.toFixed(8))} className="absolute right-2 top-2 text-orange-400"><i className="fas fa-copy"></i></button></div></div><div><label className="text-[10px] block">{currency==='USD'?t.fLabelUSD:t.fLabelBRL}</label><div className="relative"><span className="absolute left-3 top-3 text-slate-400 text-sm">{fiatSymbol}</span><input type="text" value={fiatVal} onChange={(e)=>updateFiat(e.target.value)} className="w-full p-3 pl-7 rounded-xl bg-black/20 font-mono" placeholder="0,00" /></div></div><div><label className="text-[10px] block">{t.lSats}</label><div className="relative"><input type="text" value={formatSatoshis(satsVal)} onChange={(e)=>updateSats(e.target.value)} className="w-full p-3 rounded-xl bg-black/20 font-mono" placeholder="0" /><button onClick={()=>copy(satsVal)} className="absolute right-2 top-2 text-orange-400"><i className="fas fa-copy"></i></button></div></div></div></div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12"><div className={`glass-card overflow-hidden ${!isDark&&'bg-white'}`}><div className="p-5 border-b border-white/10"><h3 className="font-black text-sm uppercase text-orange-500"><i className="fas fa-table mr-2"></i> {t.quickTable}</h3></div><div className="overflow-y-auto max-h-[400px]"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-black/20"><tr><th className="p-4">{t.unit}</th><th>Satoshis</th><th className="text-right">{t.thFiat}</th></tr></thead><tbody>{REF_LEVELS.map(item=>{ let btc=item.sats/1e8; return <tr key={item.sats} className="border-b border-white/10"><td className="p-4 font-bold text-orange-400">{item.label}<div className="text-[9px] opacity-50">{btc.toFixed(8)} BTC</div></td><td className="text-right">{item.sats.toLocaleString('pt-BR')}</td><td className="text-right">{fiatSymbol} {(btc*currentPrice).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>;})}</tbody>}</table></div></div><div className={`glass-card overflow-hidden ${!isDark&&'bg-white'}`}><div className="p-5 border-b border-white/10"><h3 className="font-black text-sm uppercase text-white"><i className="fas fa-cube mr-2"></i> {t.recent}</h3></div><div className="overflow-y-auto max-h-[400px]"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-black/20"><tr><th className="p-4">Altura</th><th>{t.thP}</th><th>{t.thW}</th><th className="text-right">{t.thF}</th></tr></thead><tbody>{data?.blocks?.slice(0,8).map(b=>{ let poolName=b.extras?.pool?.name||(b.extras?.pool||"Desconhecido"); let weightVal=b.weight?(b.weight/1e6).toFixed(2):(b.size?(b.size/1e6*3.8).toFixed(2):"?"); return <tr key={b.height} className="border-b border-white/10"><td className="p-4 text-orange-500 font-mono">#{b.height.toLocaleString()}</td><td className="truncate max-w-[100px]">{poolName}</td><td className="text-center">{weightVal}M</td><td className="text-right text-green-400">{b.extras?.medianFee||(b.medianFee||"--")} sat</td></tr>;})}</tbody></table></div></div></div><footer className="text-center text-[9px] text-slate-500 pb-10">{t.footer} · Dados em tempo real · Preço+taxas a cada 10s · Demais dados a cada 30s</footer></div><div className={`fixed bottom-6 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-5 py-2 rounded-full text-xs font-black flex gap-2 transition-all duration-300 z-50 ${showToast?'opacity-100 translate-y-0':'opacity-0 translate-y-10'}`}><i className="fas fa-check-circle"></i> {t.toast}</div></div> ); }
+    const rootElement = document.getElementById('root'); if (ReactDOM.createRoot) { ReactDOM.createRoot(rootElement).render(<App />); } else { ReactDOM.render(<App />, rootElement); }
   </script>
 </body>
 </html>
