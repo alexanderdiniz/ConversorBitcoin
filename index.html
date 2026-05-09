@@ -3,460 +3,614 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conversor Bitcoin Pro - Mercado em Tempo Real</title>
+    <title>Mempool Sentinel Pro · Dashboard Analítico Bitcoin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
         :root {
-            --bg-color: #0b0e11;
-            --card-bg: #1e2329;
-            --btc-orange: #f7931a;
-            --btc-orange-hover: #e17d00;
-            --text-main: #eaecef;
-            --text-secondary: #848e9c;
-            --border-color: #2b3139;
-            --accent-green: #0ecb81;
-            --accent-red: #f6465d;
-            --input-bg: #2b3139;
-            --shadow: rgba(0,0,0,0.5);
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --mp-low: #44bb99; --mp-med: #fbc02d; --mp-high: #f7931a;
+            --mp-higher: #d32f2f; --mp-extreme: #7b1fa2; --btc-orange: #f7931a;
+            --text-main: #f3f4f6;
+            --text-muted: #94a3b8;
+            --bg-body: #0a0c10;
         }
 
-        body.light-mode {
-            --bg-color: #f0f2f5;
-            --card-bg: #ffffff;
-            --text-main: #1e2329;
-            --text-secondary: #707a8a;
-            --border-color: #eaecef;
-            --input-bg: #f5f5f5;
-            --shadow: rgba(0,0,0,0.05);
+        /* Variáveis específicas para o Modo Claro */
+        body.light {
+            --bg-body: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
         }
 
-        body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            transition: background-color 0.4s ease;
-            -webkit-font-smoothing: antialiased;
+        body { 
+            background: var(--bg-body); 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            transition: background 0.4s ease, color 0.4s ease; 
+            scroll-behavior: smooth; 
+        }
+        
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Glassmorphism Dinâmico */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+            transition: background 0.4s ease, border 0.4s ease, box-shadow 0.4s ease;
         }
 
-        header {
-            width: 100%;
-            max-width: 1100px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            gap: 15px;
+        .light .glass-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05);
         }
 
-        .logo { font-size: 1.6rem; font-weight: 800; color: var(--btc-orange); display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
-
-        .controls { display: flex; gap: 12px; }
-        button.tool-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 10px 18px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition);
-            font-weight: 600;
-            box-shadow: 0 2px 4px var(--shadow);
-        }
-        button.tool-btn:hover { border-color: var(--btc-orange); background: var(--input-bg); transform: translateY(-1px); }
-        button.tool-btn:active { transform: translateY(0); }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 24px;
-            width: 100%;
-            max-width: 1100px;
-        }
-
-        @media (max-width: 950px) { .main-grid { grid-template-columns: 1fr; } }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 12px 40px var(--shadow);
-            padding: 28px;
+        /* Cubos Isométricos 3D */
+        .block-cube {
             position: relative;
-            overflow: hidden;
-        }
-
-        .price-section { text-align: center; margin-bottom: 30px; }
-        .price-value { font-size: 2.8rem; font-weight: 800; margin: 8px 0; color: var(--text-main); }
-        .change-badge { font-size: 0.9rem; font-weight: bold; padding: 4px 10px; border-radius: 6px; }
-        .change-up { background: rgba(14, 203, 129, 0.15); color: var(--accent-green); }
-        .change-down { background: rgba(246, 70, 93, 0.15); color: var(--accent-red); }
-
-        .input-box { margin-bottom: 24px; }
-        .input-box label { display: block; margin-bottom: 10px; font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px; }
-        .input-wrapper { position: relative; }
-        .input-wrapper input {
-            width: 100%; background: var(--input-bg); border: 1px solid var(--border-color);
-            color: var(--text-main); padding: 18px 50px 18px 18px; border-radius: 14px; font-size: 1.2rem; 
-            outline: none; transition: var(--transition); box-sizing: border-box; font-family: 'JetBrains Mono', monospace;
-        }
-        .input-wrapper input:focus { border-color: var(--btc-orange); box-shadow: 0 0 0 4px rgba(247, 147, 26, 0.15); }
-        
-        .copy-btn { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem; padding: 5px; border-radius: 6px; transition: var(--transition); }
-        .copy-btn:hover { color: var(--btc-orange); background: rgba(247, 147, 26, 0.1); }
-
-        .fees-container { margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 25px; }
-        .fees-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-        
-        .fee-button {
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            padding: 15px 10px;
-            border-radius: 14px;
-            text-align: center;
+            width: 70px;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
-            transition: var(--transition);
+            transform-style: preserve-3d;
+            margin: 0 14px;
         }
-        .fee-button:hover { border-color: var(--btc-orange); }
-        .fee-button.active { border-color: var(--btc-orange); background: rgba(247, 147, 26, 0.1); }
+
+        .face-front {
+            position: relative;
+            width: 100%; height: 100%;
+            border-radius: 4px;
+            display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+            z-index: 2;
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.3);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .block-cube::before {
+            content: ''; position: absolute; top: -14px; left: 7px; width: 100%; height: 14px;
+            background: rgba(255,255,255,0.25); transform: skewX(-45deg); border-radius: 1px; z-index: 1;
+        }
+
+        .block-cube::after {
+            content: ''; position: absolute; top: -7px; right: -14px; width: 14px; height: 100%;
+            background: rgba(0,0,0,0.4); transform: skewY(-45deg); border-radius: 1px; z-index: 1;
+        }
+
+        .light .block-cube::after {
+            background: rgba(0,0,0,0.15);
+        }
+
+        .block-cube:hover { transform: scale(1.1) translateY(-20px); filter: brightness(1.1); z-index: 50; }
+
+        .c-mined .face-front { background: linear-gradient(180deg, #5d3fd3 0%, #1e1b4b 100%); }
+        .c-low .face-front { background: linear-gradient(180deg, #44bb99 0%, #2e7d64 100%); }
+        .c-med .face-front { background: linear-gradient(180deg, #fbc02d 0%, #f9a825 100%); }
+        .c-high .face-front { background: linear-gradient(180deg, #f7931a 0%, #e65100 100%); }
+        .c-higher .face-front { background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 100%); }
+        .c-extreme .face-front { background: linear-gradient(180deg, #7b1fa2 0%, #4a148c 100%); }
+
+        #progress-top { height: 4px; background: var(--btc-orange); width: 0%; box-shadow: 0 0 15px var(--btc-orange); transition: width 1s linear; }
+
+        .tooltip-box {
+            visibility: hidden; position: absolute; bottom: 145%; left: 50%; transform: translateX(-50%);
+            background: #0f172a; color: #f3f4f6; padding: 14px; border-radius: 16px; font-size: 11px;
+            width: 220px; text-align: center; z-index: 100; box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+            border: 1px solid rgba(255,255,255,0.1); line-height: 1.6; opacity: 0; transition: 0.3s; pointer-events: none;
+        }
         
-        .fee-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 5px; display: block; }
-        .fee-value { font-weight: 800; color: var(--accent-green); font-size: 1rem; }
-
-        .fee-estimate-box {
-            margin-top: 20px; background: var(--bg-color); padding: 15px; border-radius: 12px;
-            text-align: center; font-size: 0.9rem; border: 1px solid var(--border-color);
+        .light .tooltip-box {
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
         }
-        #estimate-text { color: var(--btc-orange); font-weight: 800; }
 
-        .table-card { overflow-x: auto; max-height: 550px; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        th { text-align: left; padding: 15px; color: var(--text-secondary); font-size: 0.75rem; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--card-bg); z-index: 10; }
-        td { padding: 15px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; vertical-align: middle; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: rgba(247, 147, 26, 0.03); }
-        .sat-count { font-family: 'JetBrains Mono', monospace; color: var(--btc-orange); font-weight: 700; }
-        .btc-unit { font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.75rem; }
+        .block-cube:hover .tooltip-box, .info-icon:hover .tooltip-box { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(-10px); }
 
-        .toast {
-            position: fixed; bottom: 30px; background: #1e2329; color: #f7931a; border: 1px solid #f7931a;
-            padding: 15px 30px; border-radius: 12px; display: none; z-index: 9999; font-weight: bold;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out;
+        .info-icon {
+            display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px;
+            font-size: 10px; font-weight: 800; border-radius: 50%; background: rgba(247, 147, 26, 0.1);
+            color: var(--btc-orange); border: 1px solid rgba(247, 147, 26, 0.4); cursor: help; margin-left: 6px;
         }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        footer { margin-top: 50px; text-align: center; color: var(--text-secondary); font-size: 0.8rem; opacity: 0.8; }
+        input {
+            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            color: inherit !important;
+            transition: all 0.3s ease;
+        }
 
-        /* Estilo para animação de pulsação suave no status */
-        .status-dot { width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; display: inline-block; box-shadow: 0 0 10px var(--accent-green); }
+        .light input {
+            background: #f1f5f9 !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+
+        input:focus { border-color: var(--btc-orange) !important; box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.2); }
+
+        .light .text-gray-300, .light .text-gray-400, .light .text-gray-500 { color: #64748b; }
+        .light .text-white { color: #0f172a; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+        .light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
     </style>
 </head>
-<body>
+<body class="min-h-screen pb-12 overflow-x-hidden">
 
-    <div id="toast" class="toast">Valor copiado!</div>
+    <div class="fixed top-0 left-0 w-full z-50"><div id="progress-top"></div></div>
 
-    <header>
-        <div class="logo">
-            <svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#F7931A"/><path d="M22.31 14.28c.36-2.45-1.5-3.76-4.04-4.64l.82-3.32-2.02-.5-.8 3.22c-.53-.13-1.08-.26-1.62-.38l.81-3.24-2.02-.5-.82 3.32c-.44-.1-.87-.2-1.29-.3l.01-.01-2.78-.69-.54 2.15s1.5.34 1.46.36c.82.2.96.74.94 1.17l-.94 3.76c.06.01.13.04.21.07l-.21-.05-1.32 5.29c-.1.25-.35.63-.91.49.02.03-1.46-.36-1.46-.36l-.99 2.3 2.63.66c.49.12.96.25 1.43.37l-.83 3.33 2.02.5.82-3.3c.55.15 1.09.29 1.62.42l-.82 3.28 2.02.5.83-3.33c3.45.65 6.04.39 7.13-2.73.88-2.51-.04-3.96-1.86-4.91 1.33-.31 2.33-1.18 2.59-2.98zm-4.64 6.52c-.63 2.52-4.86 1.16-6.24.81l1.11-4.47c1.38.35 5.79.98 5.13 3.66zm.63-6.55c-.57 2.3-4.1 1.13-5.25.85l1.01-4.04c1.15.28 4.84.81 4.24 3.19z" fill="white"/></svg>
-            <span id="app-title">Conversor Bitcoin</span>
-        </div>
-        <div class="controls">
-            <button class="tool-btn" id="lang-toggle" aria-label="Alterar Idioma">🌐 <span id="lang-text">English</span></button>
-            <button class="tool-btn" id="currency-toggle" aria-label="Alterar Moeda"><span id="curr-flag">🇧🇷</span> <span id="curr-text">BRL</span></button>
-            <button class="tool-btn" id="theme-btn">🌙</button>
-        </div>
-    </header>
-
-    <div class="main-grid">
-        <div class="card">
-            <div class="status-badge"><div class="status-dot"></div> &nbsp;<span id="status-text">REDE ATIVA</span></div>
-            <div class="price-section">
-                <div class="price-value" id="main-price">...</div>
-                <span id="price-change" class="change-badge">0.00%</span>
-            </div>
-            
-            <div class="input-box">
-                <label>BITCOIN (BTC)</label>
-                <div class="input-wrapper">
-                    <input type="number" id="btc-input" placeholder="0.00000000" step="0.00000001">
-                    <button class="copy-btn" onclick="copyVal('btc-input')" title="Copiar BTC">📋</button>
+    <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+            <div class="flex items-center gap-5">
+                <div class="p-4 bg-orange-500 rounded-[2rem] shadow-2xl shadow-orange-500/30">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M22.31 14.28c.36-2.45-1.5-3.76-4.04-4.64l.82-3.32-2.02-.5-.8 3.22c-.53-.13-1.08-.26-1.62-.38l.81-3.24-2.02-.5-.82 3.32c-.44-.1-.87-.2-1.29-.3l.01-.01-2.78-.69-.54 2.15s1.5.34 1.46.36c.82.2.96.74.94 1.17l-.94 3.76c.06.01.13.04.21.07l-.21-.05-1.32 5.29c-.1.25-.35.63-.91.49.02.03-1.46-.36-1.46-.36l-.99 2.3 2.63.66c.49.12.96.25 1.43.37l-.83 3.33 2.02.5.82-3.3c.55.15 1.09.29 1.62.42l-.82 3.28 2.02.5.83-3.33c3.45.65 6.04.39 7.13-2.73.88-2.51-.04-3.96-1.86-4.91 1.33-.31 2.33-1.18 2.59-2.98zm-4.64 6.52c-.63 2.52-4.86 1.16-6.24.81l1.11-4.47c1.38.35 5.79.98 5.13 3.66zm.63-6.55c-.57 2.3-4.1 1.13-5.25.85l1.01-4.04c1.15.28 4.84.81 4.24 3.19z" fill="white"/></svg>
                 </div>
-            </div>
-
-            <div class="input-box">
-                <label id="fiat-label">VALOR EM REAIS (BRL)</label>
-                <div class="input-wrapper">
-                    <input type="text" id="fiat-input" placeholder="0,00">
-                    <button class="copy-btn" onclick="copyVal('fiat-input')" title="Copiar Fiat">📋</button>
-                </div>
-            </div>
-
-            <div class="input-box">
-                <label id="sats-label">SATOSHIS (SATS)</label>
-                <div class="input-wrapper">
-                    <input type="text" id="sats-input" placeholder="0">
-                    <button class="copy-btn" onclick="copyVal('sats-input')" title="Copiar Sats">📋</button>
-                </div>
-            </div>
-
-            <div class="fees-container">
-                <label id="fees-header">TAXAS DE REDE (ESTIMATIVA vBYTE)</label>
-                <div class="fees-grid">
-                    <div class="fee-button" id="fee-low-btn" onclick="selectFee('low')">
-                        <span class="fee-label" id="fee-low-label">Baixa</span>
-                        <span class="fee-value" id="fee-low">--</span>
-                    </div>
-                    <div class="fee-button" id="fee-med-btn" onclick="selectFee('med')">
-                        <span class="fee-label" id="fee-med-label">Média</span>
-                        <span class="fee-value" id="fee-med" style="color: var(--btc-orange);">--</span>
-                    </div>
-                    <div class="fee-button" id="fee-high-btn" onclick="selectFee('high')">
-                        <span class="fee-label" id="fee-high-label">Alta</span>
-                        <span class="fee-value" id="fee-high" style="color: var(--accent-red);">--</span>
+                <div>
+                    <h1 class="text-2xl font-black uppercase tracking-tighter">Mempool Sentinel <span class="text-orange-500">Pro</span></h1>
+                    <div class="flex items-center gap-2 text-[10px] font-black text-gray-500 mt-1 uppercase tracking-widest">
+                        <span id="live-dot" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        <span id="ui-status-text">Rede Ativa</span>
                     </div>
                 </div>
-                <div class="fee-estimate-box">
-                    <span id="estimate-prefix">Custo (Tx Padrão):</span> <span id="estimate-text">Escolha a taxa</span>
+            </div>
+
+            <div class="flex gap-4">
+                <div class="flex bg-gray-900/10 light:bg-gray-100 p-1 rounded-2xl border border-gray-800 light:border-gray-200 shadow-inner">
+                    <button id="set-brl" class="px-5 py-2 rounded-xl text-xs font-black transition-all bg-orange-500 text-white shadow-lg">BRL</button>
+                    <button id="set-usd" class="px-5 py-2 rounded-xl text-xs font-black transition-all text-gray-400 hover:text-orange-500">USD</button>
+                </div>
+                <button id="lang-toggle" class="px-5 py-2 bg-gray-900/10 light:bg-gray-100 rounded-2xl border border-gray-800 light:border-gray-200 text-xs font-black uppercase hover:border-orange-500">PT</button>
+                <button id="theme-toggle" class="p-3 bg-gray-900/10 light:bg-gray-100 rounded-2xl border border-gray-800 light:border-gray-200 hover:border-orange-500 transition-all text-xl">🌙</button>
+            </div>
+        </header>
+
+        <!-- DASHBOARD GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <!-- Preço -->
+            <div class="glass-card p-7 border-l-4 border-orange-500">
+                <div class="flex justify-between mb-2">
+                    <p id="label-price" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Preço Bitcoin</p>
+                    <div class="info-icon">? <div id="tip-price" class="tooltip-box">Preço atual do BTC em tempo real.</div></div>
+                </div>
+                <h2 id="ui-price-val" class="text-2xl font-black mono text-white">---</h2>
+                <div class="text-[10px] font-bold mt-3 text-gray-500 uppercase tracking-tighter italic">Capitalização: <span id="ui-market-cap" class="text-orange-500 font-black">---</span></div>
+            </div>
+
+            <!-- Mempool -->
+            <div class="glass-card p-7 border-l-4 border-blue-500">
+                <div class="flex justify-between mb-2">
+                    <p id="label-mempool" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Mempool</p>
+                    <div class="info-icon">? <div id="tip-mempool" class="tooltip-box">Fila de transações aguardando mineração.</div></div>
+                </div>
+                <h2 id="ui-mp-tx" class="text-2xl font-black mono text-white">---</h2>
+                <div class="flex justify-between text-[10px] font-bold mt-3 text-gray-500 uppercase tracking-tighter italic">
+                    <span>vSize: <span id="ui-mp-vsize" class="text-blue-400 font-black">---</span></span>
+                    <span>Fees: <span id="ui-mp-fees" class="text-blue-400 font-black">---</span></span>
+                </div>
+            </div>
+
+            <!-- Taxas -->
+            <div class="glass-card p-7 border-l-4 border-green-500">
+                <div class="flex justify-between mb-2">
+                    <p id="label-fee" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Taxa Prioritária</p>
+                    <div class="info-icon">? <div id="tip-fee" class="tooltip-box">Taxa sugerida para o próximo bloco (~10 min).</div></div>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <h2 id="ui-fee-fast" class="text-3xl font-black mono text-green-400">--</h2>
+                    <span class="text-xs font-bold text-green-500/50">sat/vB</span>
+                </div>
+                <div id="label-conf" class="text-[10px] font-bold mt-3 text-gray-500 uppercase italic">Rede Estável</div>
+            </div>
+
+            <!-- Halving -->
+            <div class="glass-card p-7 border-l-4 border-purple-500 relative overflow-hidden">
+                <div class="flex justify-between mb-2">
+                    <p id="label-halv" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Halving Progress</p>
+                    <div class="info-icon">? <div id="tip-halv" class="tooltip-box">Progresso para o próximo corte de emissão.</div></div>
+                </div>
+                <h2 id="ui-halving-pct" class="text-2xl font-black mono text-purple-400">--%</h2>
+                <div class="w-full bg-gray-800 light:bg-gray-200 h-2 rounded-full mt-4 overflow-hidden shadow-inner">
+                    <div id="ui-halv-bar" class="h-full bg-gradient-to-r from-purple-700 to-purple-400 transition-all duration-1000" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
-        <div class="card">
-            <h4 id="table-title" style="margin-top: 0; font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">Tabela de Referência</h4>
-            <div class="table-card">
-                <table>
-                    <thead>
-                        <tr>
-                            <th id="th-unit">Unidade</th>
-                            <th id="th-sats">Satoshis</th>
-                            <th id="th-fiat" style="text-align: right;">Preço</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ref-table"></tbody>
-                </table>
+        <!-- VISUALIZADOR 3D TIMELINE -->
+        <div class="glass-card p-10 mb-10 relative overflow-hidden">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
+                <h3 id="label-flow" class="font-black text-sm uppercase tracking-widest">Fluxo de Blocos (Isométrico 3D)</h3>
+                <span id="ui-height-badge" class="px-5 py-2 bg-orange-500/10 border border-orange-500/20 rounded-2xl text-orange-500 mono text-xs font-black shadow-inner">#-------</span>
+            </div>
+
+            <div class="relative flex items-end justify-center min-h-[300px] gap-2 pt-16 pb-8">
+                <div class="absolute left-1/2 top-0 bottom-0 w-[2px] border-l-2 border-dashed border-gray-700 light:border-gray-300 z-10">
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 bg-gray-800 light:bg-gray-200 text-[8px] font-black px-2 py-1 rounded text-gray-400 light:text-gray-600 uppercase border border-gray-700 light:border-gray-300">AGORA</div>
+                </div>
+                <div id="ui-timeline" class="flex items-end justify-center w-full h-full"></div>
             </div>
         </div>
+
+        <!-- FERRAMENTAS ANALÍTICAS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+            <!-- Rede -->
+            <div class="glass-card p-8">
+                <h3 id="label-net-title" class="font-black text-sm mb-8 uppercase tracking-widest text-orange-500">🌐 Rede & Ajustes</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between border-b border-gray-800 light:border-gray-200 pb-3">
+                        <span id="label-diff" class="text-[10px] font-black text-gray-500 uppercase">Dificuldade</span>
+                        <span id="ui-net-diff" class="text-xs font-black mono text-white">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-800 light:border-gray-200 pb-3">
+                        <span id="label-adj" class="text-[10px] font-black text-gray-500 uppercase">Ajuste Est.</span>
+                        <span id="ui-net-adj" class="text-xs font-black mono text-orange-400">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-800 light:border-gray-200 pb-3">
+                        <span id="label-hash" class="text-[10px] font-black text-gray-500 uppercase">Hashrate</span>
+                        <span id="ui-net-hash" class="text-xs font-black mono text-blue-400">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-800 light:border-gray-200 pb-3">
+                        <span id="label-pending" class="text-[10px] font-black text-gray-500 uppercase">Fees Pendentes</span>
+                        <span id="ui-mp-fees-btc" class="text-xs font-black mono text-white">--- BTC</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculadora Real -->
+            <div class="glass-card p-8">
+                <h3 id="label-calc-title" class="font-black text-sm mb-8 uppercase tracking-widest text-green-500">⚡ Calculadora de Taxas</h3>
+                <div class="space-y-4 mb-8">
+                    <div class="flex justify-between items-center p-4 bg-gray-950/40 light:bg-gray-100 border border-gray-800 light:border-gray-200 rounded-2xl group hover:border-green-500/30 transition-all">
+                        <span id="label-prio-h" class="text-[10px] font-black text-gray-500 uppercase">Alta Prioridade</span>
+                        <span id="ui-calc-h" class="text-sm font-black mono text-green-400">-- sat</span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-gray-950/40 light:bg-gray-100 border border-gray-800 light:border-gray-200 rounded-2xl group hover:border-gray-600/30 transition-all">
+                        <span id="label-prio-l" class="text-[10px] font-black text-gray-500 uppercase">Baixa Prioridade</span>
+                        <span id="ui-calc-l" class="text-sm font-black mono text-gray-400">-- sat</span>
+                    </div>
+                </div>
+                <div class="pt-6 border-t border-gray-800 light:border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <span id="label-size" class="text-[10px] font-black text-gray-500 uppercase">Tamanho TX (vBytes)</span>
+                        <input type="number" id="in-calc-vsize" value="140" class="w-20 rounded-lg p-2 text-center text-xs font-bold mono text-orange-500 shadow-inner">
+                    </div>
+                    <div class="bg-orange-500/5 light:bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 text-center">
+                        <p id="label-est-cost" class="text-[9px] font-black text-orange-500 uppercase mb-1 tracking-widest">Custo Real Estimado</p>
+                        <p id="ui-calc-total" class="text-lg font-black mono text-white">---</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONVERSOR TOTAL BIDIRECIONAL -->
+            <div class="glass-card p-8">
+                <h3 id="label-conv-title" class="font-black text-sm mb-8 uppercase tracking-widest text-yellow-500">🔄 Conversor Real-Time</h3>
+                <div class="space-y-5">
+                    <div>
+                        <label id="label-in-btc" class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Bitcoin (BTC)</label>
+                        <input type="number" id="in-conv-btc" value="1.0" step="0.0001" class="w-full rounded-xl p-4 font-black mono text-orange-400 outline-none focus:border-orange-500/50 shadow-inner">
+                    </div>
+                    <div>
+                        <label id="label-fiat-conv" class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Moeda Fiat (R$/$)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="in-conv-fiat" class="flex-1 rounded-xl p-4 font-black mono text-white text-sm outline-none focus:border-white shadow-inner">
+                            <button onclick="app.copy('in-conv-fiat')" class="p-4 bg-gray-900 light:bg-gray-200 border border-gray-800 light:border-gray-300 rounded-2xl hover:bg-orange-500 hover:text-white transition-all">📋</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label id="label-in-sats" class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Satoshis (SATS)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="in-conv-sats" class="flex-1 rounded-xl p-4 font-black mono text-gray-400 text-sm outline-none focus:border-gray-500 shadow-inner">
+                            <button onclick="app.copy('in-conv-sats')" class="p-4 bg-gray-900 light:bg-gray-200 border border-gray-800 light:border-gray-300 rounded-2xl hover:bg-orange-500 hover:text-white transition-all">📋</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            <!-- TABELA DE VALORES RÁPIDOS -->
+            <div class="glass-card overflow-hidden flex flex-col">
+                <div class="p-8 border-b border-gray-800 light:border-gray-200 bg-gray-900/10 light:bg-gray-50 flex justify-between items-center">
+                    <h3 id="label-quick-table" class="font-black text-sm uppercase tracking-widest text-orange-500">💰 Tabela de Conversão Rápida</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black text-gray-500 uppercase border-b border-gray-800 light:border-gray-200 bg-gray-950/10 light:bg-gray-100">
+                                <th class="px-8 py-5">Bitcoin</th>
+                                <th class="px-8 py-5 text-center">Satoshi</th>
+                                <th id="th-fiat-val" class="px-8 py-5 text-right">Valor Fiat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ui-quick-conv-table" class="text-sm font-medium"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABELA DE BLOCOS -->
+            <div class="glass-card overflow-hidden flex flex-col">
+                <div class="p-8 border-b border-gray-800 light:border-gray-200 bg-gray-900/10 light:bg-gray-50 flex justify-between items-center">
+                    <h3 id="label-recent" class="font-black text-sm uppercase tracking-widest text-white">Últimos Blocos Confirmados</h3>
+                </div>
+                <div class="overflow-x-auto max-h-[400px]">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black text-gray-500 uppercase border-b border-gray-800 light:border-gray-200 bg-gray-950/10 light:bg-gray-100">
+                                <th class="px-8 py-5">Altura</th>
+                                <th id="th-pool" class="px-8 py-5">Minerador</th>
+                                <th id="th-weight" class="px-8 py-5 text-center">Peso</th>
+                                <th id="th-fee" class="px-8 py-5 text-right">Taxa Med.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ui-blocks-table" class="text-sm font-medium"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center opacity-30 pt-12 border-t border-gray-800 light:border-gray-200 pb-12">
+            <p id="label-footer" class="text-[10px] font-black uppercase tracking-[0.5em]">Sentinel Pro v5.9 · Interface Otimizada Real-Time</p>
+        </footer>
     </div>
 
-    <footer>
-        <p id="footer-text">© 2026 Conversor Pro • Dados: CoinGecko & Mempool.space</p>
-    </footer>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 bg-orange-500 text-white font-black rounded-2xl text-xs shadow-2xl transform translate-y-40 transition-transform duration-500 z-[200]">Copiado com sucesso!</div>
 
     <script>
-        const translations = {
-            'pt-BR': {
-                appTitle: 'Conversor Bitcoin', langText: 'English', statusText: 'REDE ATIVA',
-                fiatLabelBRL: 'VALOR EM REAIS (BRL)', fiatLabelUSD: 'VALOR EM DÓLARES (USD)',
-                satsLabel: 'SATOSHIS (SATS)', feesHeader: 'TAXAS DE REDE (ESTIMATIVA vBYTE)',
-                feeLow: 'Baixa', feeMed: 'Média', feeHigh: 'Alta',
-                estimatePrefix: 'Custo (Tx Padrão):', estimatePlaceholder: 'Escolha a taxa',
-                tableTitle: 'Tabela de Referência', thUnit: 'Unidade', thSats: 'Satoshis',
-                thFiatUSD: 'Preço USD', thFiatBRL: 'Preço BRL', toastCopy: 'Valor copiado!', lastUpdate: 'Atualizado: '
+        const I18N = {
+            pt: { status: "ATIVO", loading: "A SINCRONIZAR...", price: "Preço do Bitcoin", mp: "Mempool", fee: "Taxa Prioritária", halv: "Halving Progress", flow: "Fluxo de Blocos (Isométrico 3D)", netTitle: "Rede & Ajustes", calcTitle: "Calculadora de Taxas", convTitle: "Conversor Real-Time", quickTable: "Tabela de Conversão Rápida", recent: "Últimos Blocos", footer: "Sentinel Pro v5.9 · Interface Otimizada Real-Time", conf: "Confirmação Imediata", diff: "Dificuldade", adj: "Ajuste Est.", hash: "Hashrate", pending: "Fees Pendentes", prioH: "Alta Prioridade", prioL: "Baixa Prioridade", size: "Tamanho TX (vBytes)", estCost: "Custo Real Estimado", lBtc: "Bitcoin (BTC)", lSats: "Satoshis (SATS)", thP: "Minerador", thW: "Peso", thF: "Taxa Med.", fLabel: "Valor em Moeda Fiat (R$/$)", thFiat: "Valor Fiat" },
+            en: { status: "ACTIVE", loading: "SYNCING...", price: "Bitcoin Price", mp: "Mempool Status", fee: "Fastest Fee", halv: "Halving Progress", flow: "Block Flow (3D Isometric)", netTitle: "Network & Adjusts", calcTitle: "Fee Calculator", convTitle: "Real-Time Converter", quickTable: "Quick Conversion Table", recent: "Recent Blocks", footer: "Sentinel Pro v5.9 · Optimized Real-Time Interface", conf: "Instant Confirmation", diff: "Difficulty", adj: "Est. Adjustment", hash: "Hashrate", pending: "Pending Fees", prioH: "High Priority", prioL: "Low Priority", size: "TX Size (vBytes)", estCost: "Estimated Real Cost", lBtc: "Bitcoin (BTC)", lSats: "Satoshis (SATS)", thP: "Mined By", thW: "Weight", thF: "Avg Fee", fLabel: "Fiat Currency Value (R$/$)", thFiat: "Fiat Value" }
+        };
+
+        const state = {
+            lang: localStorage.getItem('s_lang') || 'pt',
+            currency: localStorage.getItem('s_curr') || 'BRL',
+            prices: { brl: 0, usd: 0 },
+            fees: { fast: 10, low: 1 },
+            height: 0,
+            isUpdatingConverter: false
+        };
+
+        const app = {
+            fmt: (n, d = 0) => {
+                if (n === null || n === undefined || isNaN(n)) return "---";
+                return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
             },
-            'en-US': {
-                appTitle: 'Bitcoin Converter', langText: 'Português', statusText: 'NETWORK ACTIVE',
-                fiatLabelBRL: 'VALUE IN REAIS (BRL)', fiatLabelUSD: 'VALUE IN DOLLARS (USD)',
-                satsLabel: 'SATOSHIS (SATS)', feesHeader: 'NETWORK FEES (vBYTE ESTIMATE)',
-                feeLow: 'Low', feeMed: 'Medium', feeHigh: 'High',
-                estimatePrefix: 'Cost (Std Tx):', estimatePlaceholder: 'Choose fee',
-                tableTitle: 'Reference Table', thUnit: 'Unit', thSats: 'Satoshis',
-                thFiatUSD: 'USD Price', thFiatBRL: 'BRL Price', toastCopy: 'Value copied!', lastUpdate: 'Updated: '
+
+            clean: (str) => {
+                if (typeof str !== 'string') return parseFloat(str) || 0;
+                return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+            },
+
+            copy: (id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                navigator.clipboard.writeText(el.value || el.innerText);
+                const t = document.getElementById('toast');
+                t.classList.remove('translate-y-40');
+                setTimeout(() => t.classList.add('translate-y-40'), 2000);
+            },
+
+            api: async (url) => {
+                try {
+                    const r = await fetch(url);
+                    return r.ok ? await r.json() : null;
+                } catch { return null; }
+            },
+
+            update: async () => {
+                const status = document.getElementById('ui-status-text');
+                if (status) status.innerText = I18N[state.lang].loading;
+
+                const [p, mp, f, pr, bl, h, df] = await Promise.all([
+                    app.api('https://api.blockchain.info/ticker'),
+                    app.api('https://mempool.space/api/v1/mempool'),
+                    app.api('https://mempool.space/api/v1/fees/recommended'),
+                    app.api('https://mempool.space/api/v1/fees/mempool-blocks'),
+                    app.api('https://mempool.space/api/v1/blocks'),
+                    app.api('https://mempool.space/api/blocks/tip/height'),
+                    app.api('https://mempool.space/api/v1/difficulty-adjustment')
+                ]);
+
+                if (p) {
+                    state.prices.brl = p.BRL ? p.BRL.last : 0;
+                    state.prices.usd = p.USD ? p.USD.last : 0;
+                    app.renderPrices();
+                    app.renderQuickConversionTable();
+                }
+                
+                if (mp) app.renderMempool(mp);
+                
+                if (f) {
+                    state.fees = { fast: f.fastestFee, low: f.hourFee };
+                    const ff = document.getElementById('ui-fee-fast');
+                    const ch = document.getElementById('ui-calc-h');
+                    const cl = document.getElementById('ui-calc-l');
+                    if(ff) ff.innerText = f.fastestFee;
+                    if(ch) ch.innerText = f.fastestFee + " sat";
+                    if(cl) cl.innerText = f.hourFee + " sat";
+                }
+
+                if (h) app.renderHalving(h);
+                if (df) app.renderNetwork(df);
+
+                app.renderTimeline(bl, pr);
+                app.renderTable(bl);
+                app.runConverter('btc');
+                if(status) status.innerText = I18N[state.lang].status;
+            },
+
+            renderPrices: () => {
+                const pVal = document.getElementById('ui-price-val');
+                const cVal = document.getElementById('ui-market-cap');
+                const cur = state.currency === 'BRL' ? 'R$ ' : '$ ';
+                const price = state.currency === 'BRL' ? state.prices.brl : state.prices.usd;
+                if(pVal) pVal.innerText = cur + app.fmt(price, 2);
+                if(cVal) cVal.innerText = cur + app.fmt(state.prices.usd * 19700000, 0);
+            },
+
+            renderMempool: (mp) => {
+                const tx = document.getElementById('ui-mp-tx');
+                const vs = document.getElementById('ui-mp-vsize');
+                const fs = document.getElementById('ui-mp-fees');
+                if(tx) tx.innerText = app.fmt(mp.count);
+                if(vs) vs.innerText = app.fmt(mp.vsize / 1e6, 1) + " MB";
+                const price = state.currency === 'BRL' ? state.prices.brl : state.prices.usd;
+                const feeVal = (mp.total_fee / 1e8) * price;
+                if(fs) fs.innerText = (state.currency==='BRL'?'R$ ':'$ ') + app.fmt(feeVal, 0);
+                const fb = document.getElementById('ui-mp-fees-btc');
+                if(fb) fb.innerText = app.fmt(mp.total_fee / 1e8, 2) + " BTC";
+            },
+
+            renderHalving: (h) => {
+                state.height = h;
+                const hb = document.getElementById('ui-height-badge');
+                const hp = document.getElementById('ui-halving-pct');
+                const hbar = document.getElementById('ui-halv-bar');
+                if(hb) hb.innerText = "#" + app.fmt(h);
+                const pct = ((h % 210000) / 210000) * 100;
+                if(hp) hp.innerText = app.fmt(pct, 2) + "%";
+                if(hbar) hbar.style.width = pct + "%";
+            },
+
+            renderNetwork: (df) => {
+                const d = document.getElementById('ui-net-diff');
+                const a = document.getElementById('ui-net-adj');
+                const hs = document.getElementById('ui-net-hash');
+                if(d) d.innerText = app.fmt(df.difficulty / 1e12, 2) + " T";
+                if(a) a.innerText = (df.difficultyChange > 0 ? "+" : "") + app.fmt(df.difficultyChange, 2) + "%";
+                if(hs) hs.innerText = app.fmt(df.estimatedHashrate / 1e18, 1) + " EH/s";
+            },
+
+            renderTimeline: (mined, proj) => {
+                const tl = document.getElementById('ui-timeline');
+                if (!tl || !mined || !proj) return;
+                tl.innerHTML = '';
+                const SCALE = 160; const MAX_V = 1000000;
+
+                mined.slice(0, 3).reverse().forEach(b => {
+                    const vs = b.weight ? b.weight / 4 : b.size;
+                    const h = Math.max(60, (Math.min(1, vs / MAX_V)) * SCALE);
+                    tl.innerHTML += `<div class="block-cube c-mined opacity-50" style="height: ${h}px"><div class="face-front"><div class="tooltip-box"><b>#${app.fmt(b.height)}</b><br>${(vs / 1e6).toFixed(2)} MB</div><span class="text-[9px] font-black text-purple-200 mb-2">#${String(b.height).slice(-3)}</span></div></div>`;
+                });
+
+                proj.slice(0, 3).forEach((b, i) => {
+                    const vs = b.vsize || 0;
+                    const h = Math.max(60, (Math.min(1, vs / MAX_V)) * SCALE);
+                    const fee = b.medianFee || 0;
+                    let c = 'c-low'; if (fee >= 100) c = 'c-extreme'; else if (fee >= 60) c = 'c-higher'; else if (fee >= 30) c = 'c-high'; else if (fee >= 10) c = 'c-med';
+                    tl.innerHTML += `<div class="block-cube ${c} ${i === 0 ? 'animate-pulse ring-1 ring-white/10' : ''}" style="height: ${h}px"><div class="face-front"><div class="tooltip-box"><b>${app.fmt(fee, 1)} sat/vB</b><br>PROJETADO</div><span class="text-[9px] font-black text-white/70 mb-2">${app.fmt(fee, 0)}</span></div></div>`;
+                });
+            },
+
+            renderTable: (bl) => {
+                const tb = document.getElementById('ui-blocks-table');
+                if(!tb || !bl) return;
+                tb.innerHTML = bl.slice(0, 10).map(b => `<tr class="border-b border-gray-800 light:border-gray-100 hover:bg-white/5 transition-all"><td class="px-8 py-5 font-black mono text-orange-400">#${app.fmt(b.height)}</td><td class="px-8 py-5 text-gray-500 font-bold uppercase text-[10px]">${b.extras?.pool?.name || '---'}</td><td class="px-8 py-5 text-center text-gray-400 font-bold text-xs">${app.fmt(b.weight)}</td><td class="px-8 py-5 text-right font-black mono text-green-500">${app.fmt(b.extras?.medianFee, 1) || '--'} sat</td></tr>`).join('');
+            },
+
+            renderQuickConversionTable: () => {
+                const tb = document.getElementById('ui-quick-conv-table');
+                if(!tb) return;
+                const amounts = [1, 0.5, 0.1, 0.01, 0.001, 0.0001];
+                const price = state.currency === 'BRL' ? state.prices.brl : state.prices.usd;
+                const cur = state.currency === 'BRL' ? 'R$ ' : '$ ';
+                
+                tb.innerHTML = amounts.map(amt => {
+                    return `<tr class="border-b border-gray-800 light:border-gray-100 hover:bg-white/5 transition-all">
+                        <td class="px-8 py-5 font-black mono text-orange-400">${amt} BTC</td>
+                        <td class="px-8 py-5 text-center font-bold text-gray-400">${app.fmt(amt * 1e8)} sats</td>
+                        <td class="px-8 py-5 text-right font-black mono text-white">${cur}${app.fmt(amt * price, 2)}</td>
+                    </tr>`;
+                }).join('');
+            },
+
+            runConverter: (source) => {
+                if (state.isUpdatingConverter) return;
+                state.isUpdatingConverter = true;
+                const price = state.currency === 'BRL' ? state.prices.brl : state.prices.usd;
+                if(price === 0) { state.isUpdatingConverter = false; return; }
+
+                const iB = document.getElementById('in-conv-btc');
+                const iF = document.getElementById('in-conv-fiat');
+                const iS = document.getElementById('in-conv-sats');
+                const iV = document.getElementById('in-calc-vsize');
+                const res = document.getElementById('ui-calc-total');
+
+                let btcVal = 0;
+                if(source === 'btc') {
+                    btcVal = parseFloat(iB.value) || 0;
+                    iF.value = app.fmt(btcVal * price, 2);
+                    iS.value = app.fmt(btcVal * 1e8, 0);
+                } else if(source === 'fiat') {
+                    const cleanFiat = app.clean(iF.value);
+                    btcVal = cleanFiat / price;
+                    iB.value = btcVal.toFixed(8);
+                    iS.value = app.fmt(btcVal * 1e8, 0);
+                } else if(source === 'sats') {
+                    const cleanSats = app.clean(iS.value);
+                    btcVal = cleanSats / 1e8;
+                    iB.value = btcVal.toFixed(8);
+                    iF.value = app.fmt(btcVal * price, 2);
+                }
+
+                const vB = parseFloat(iV.value) || 0;
+                const totalCost = (vB * state.fees.fast / 1e8) * price;
+                const symbol = state.currency === 'BRL' ? 'R$ ' : '$ ';
+                if(res) res.innerText = symbol + app.fmt(totalCost, 2);
+                
+                state.isUpdatingConverter = false;
+            },
+
+            initUI: () => {
+                const t = I18N[state.lang];
+                const s = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+                s('label-price', t.price); s('label-mempool', t.mp); s('label-fee', t.fee); s('label-halv', t.halv);
+                s('label-flow', t.flow); s('label-net-title', t.netTitle); s('label-calc-title', t.calcTitle); s('label-conv-title', t.convTitle);
+                s('label-quick-table', t.quickTable); s('label-recent', t.recent); s('label-footer', t.footer); s('label-conf', t.conf);
+                s('label-diff', t.diff); s('label-adj', t.adj); s('label-hash', t.hash); s('label-pending', t.pending);
+                s('label-prio-h', t.prioH); s('label-prio-l', t.prioL); s('label-size', t.size); s('label-est-cost', t.estCost);
+                s('label-in-btc', t.lBtc); s('label-in-sats', t.lSats); s('th-pool', t.thP); s('th-weight', t.thW); s('th-fee', t.thF);
+                s('th-fiat-val', t.thFiat);
+                
+                const fl = document.getElementById('label-fiat-conv');
+                if(fl) fl.innerText = t.fLabel;
+                const lt = document.getElementById('lang-toggle');
+                if(lt) lt.innerText = state.lang.toUpperCase();
             }
         };
 
-        let currentLang = localStorage.getItem('pref-lang') || 'pt-BR';
-        let currentCurrency = localStorage.getItem('pref-curr') || 'BRL';
-        let btcPriceBRL = 0, btcPriceUSD = 0, priceChange24h = 0;
-        let currentFees = { low: 0, med: 0, high: 0 };
-        
-        const btcInput = document.getElementById('btc-input');
-        const fiatInput = document.getElementById('fiat-input');
-        const satsInput = document.getElementById('sats-input');
-        
-        const levels = [
-            { label: '1 Satoshi', sats: 1 },
-            { label: '1k Sats', sats: 1000 },
-            { label: '10k Sats', sats: 10000 },
-            { label: '100k (1 mBTC)', sats: 100000 },
-            { label: '1M (1% BTC)', sats: 1000000 },
-            { label: '10M (10% BTC)', sats: 10000000 },
-            { label: '1 BTC', sats: 100000000 }
-        ];
+        window.onload = () => {
+            const bBrl = document.getElementById('set-brl');
+            const bUsd = document.getElementById('set-usd');
+            const themeT = document.getElementById('theme-toggle');
 
-        function updateLangUI() {
-            const t = translations[currentLang];
-            document.getElementById('app-title').innerText = t.appTitle;
-            document.getElementById('lang-text').innerText = t.langText;
-            document.getElementById('status-text').innerText = t.statusText;
-            document.getElementById('sats-label').innerText = t.satsLabel;
-            document.getElementById('fees-header').innerText = t.feesHeader;
-            document.getElementById('fee-low-label').innerText = t.feeLow;
-            document.getElementById('fee-med-label').innerText = t.feeMed;
-            document.getElementById('fee-high-label').innerText = t.feeHigh;
-            document.getElementById('estimate-prefix').innerText = t.estimatePrefix;
-            document.getElementById('table-title').innerText = t.tableTitle;
-            document.getElementById('th-unit').innerText = t.thUnit;
-            document.getElementById('th-sats').innerText = t.thSats;
-            document.getElementById('footer-text').innerText = t.footerText;
+            if(bBrl) bBrl.onclick = () => { state.currency = 'BRL'; localStorage.setItem('s_curr', 'BRL'); bBrl.className = "px-5 py-2 rounded-xl text-xs font-black bg-orange-500 text-white shadow-lg"; if(bUsd) bUsd.className = "px-5 py-2 rounded-xl text-xs font-black text-gray-400"; app.update(); app.initUI(); };
+            if(bUsd) bUsd.onclick = () => { state.currency = 'USD'; localStorage.setItem('s_curr', 'USD'); bUsd.className = "px-5 py-2 rounded-xl text-xs font-black bg-orange-500 text-white shadow-lg"; if(bBrl) bBrl.className = "px-5 py-2 rounded-xl text-xs font-black text-gray-400"; app.update(); app.initUI(); };
             
-            document.getElementById('fiat-label').innerText = currentCurrency === 'USD' ? t.fiatLabelUSD : t.fiatLabelBRL;
-            document.getElementById('th-fiat').innerText = currentCurrency === 'USD' ? t.thFiatUSD : t.thFiatBRL;
-            document.getElementById('curr-flag').innerText = currentCurrency === 'USD' ? '🇺🇸' : '🇧🇷';
-            document.getElementById('curr-text').innerText = currentCurrency;
+            themeT.onclick = () => {
+                document.body.classList.toggle('light');
+                const isL = document.body.classList.contains('light');
+                themeT.innerText = isL ? '☀️' : '🌙';
+            };
 
-            renderUI();
-        }
+            document.getElementById('lang-toggle').onclick = () => { state.lang = state.lang === 'pt' ? 'en' : 'pt'; localStorage.setItem('s_lang', state.lang); app.initUI(); app.update(); };
 
-        async function fetchWithRetry(url, options = {}, retries = 3) {
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) throw new Error('Falha API');
-                return await response.json();
-            } catch (err) {
-                if (retries <= 0) throw err;
-                return fetchWithRetry(url, options, retries - 1);
-            }
-        }
+            document.getElementById('in-conv-btc').oninput = () => app.runConverter('btc');
+            document.getElementById('in-conv-fiat').oninput = () => app.runConverter('fiat');
+            document.getElementById('in-conv-sats').oninput = () => app.runConverter('sats');
+            document.getElementById('in-calc-vsize').oninput = () => app.runConverter('btc');
 
-        async function updateData() {
-            try {
-                const pData = await fetchWithRetry('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false');
-                btcPriceBRL = pData.market_data.current_price.brl;
-                btcPriceUSD = pData.market_data.current_price.usd;
-                priceChange24h = pData.market_data.price_change_percentage_24h;
-
-                const fData = await fetchWithRetry('https://mempool.space/api/v1/fees/recommended');
-                currentFees = { low: fData.hourFee, med: fData.halfHourFee, high: fData.fastestFee };
-                
-                document.getElementById('fee-low').innerText = currentFees.low;
-                document.getElementById('fee-med').innerText = currentFees.med;
-                document.getElementById('fee-high').innerText = currentFees.high;
-                
-                updatePriceDisplay();
-                renderUI();
-            } catch (e) { console.error("Update Error", e); }
-        }
-
-        function updatePriceDisplay() {
-            const price = currentCurrency === 'USD' ? btcPriceUSD : btcPriceBRL;
-            const symbol = currentCurrency === 'USD' ? '$' : 'R$';
-            const changeEl = document.getElementById('price-change');
+            let tick = 0; setInterval(() => { tick++; const b = document.getElementById('progress-top'); if(b) b.style.width = (tick / 30 * 100) + "%"; if(tick >= 30) { tick = 0; app.update(); } }, 1000);
             
-            document.getElementById('main-price').innerText = `${symbol} ${price.toLocaleString(currentLang, {minimumFractionDigits: 2})}`;
-            
-            changeEl.innerText = `${priceChange24h > 0 ? '+' : ''}${priceChange24h.toFixed(2)}%`;
-            changeEl.className = `change-badge ${priceChange24h >= 0 ? 'change-up' : 'change-down'}`;
-        }
-
-        function renderUI() {
-            const price = currentCurrency === 'USD' ? btcPriceUSD : btcPriceBRL;
-            const symbol = currentCurrency === 'USD' ? '$' : 'R$';
-            const tbody = document.getElementById('ref-table');
-            tbody.innerHTML = '';
-            
-            levels.forEach(item => {
-                const btc = item.sats / 100000000;
-                tbody.innerHTML += `<tr>
-                    <td><div>${item.label}</div><span class="btc-unit">${btc.toFixed(8)} BTC</span></td>
-                    <td class="sat-count">${item.sats.toLocaleString(currentLang)}</td>
-                    <td style="text-align: right; font-weight: bold; color: var(--accent-green)">${symbol} ${(btc * price).toLocaleString(currentLang, {minimumFractionDigits: 2})}</td>
-                </tr>`;
-            });
-            
-            const activeFee = document.querySelector('.fee-button.active');
-            if(activeFee) selectFee(activeFee.id.split('-')[1]);
-        }
-
-        function selectFee(type) {
-            document.querySelectorAll('.fee-button').forEach(b => b.classList.remove('active'));
-            document.getElementById(`fee-${type}-btn`).classList.add('active');
-            const fee = currentFees[type];
-            const price = currentCurrency === 'USD' ? btcPriceUSD : btcPriceBRL;
-            const costSats = fee * 140; 
-            const costFiat = (costSats / 100000000) * price;
-            const symbol = currentCurrency === 'USD' ? '$' : 'R$';
-            document.getElementById('estimate-text').innerText = `${symbol} ${costFiat.toLocaleString(currentLang, {minimumFractionDigits: 2})} (${costSats.toLocaleString(currentLang)} sats)`;
-        }
-
-        // Formatação de Input Numérico para Fiat/Sats
-        function formatNumberInput(val) {
-            const clean = val.replace(/\D/g, '');
-            return clean === '' ? '' : Number(clean).toLocaleString(currentLang);
-        }
-
-        function parseFormatted(val) {
-            return parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0;
-        }
-
-        btcInput.oninput = () => {
-            const btc = parseFloat(btcInput.value) || 0;
-            const price = currentCurrency === 'USD' ? btcPriceUSD : btcPriceBRL;
-            fiatInput.value = (btc * price).toLocaleString(currentLang, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            satsInput.value = Math.round(btc * 100000000).toLocaleString(currentLang);
+            if(state.currency === 'USD') bUsd.click(); else bBrl.click();
+            app.initUI(); app.update();
         };
-
-        fiatInput.oninput = (e) => {
-            const val = parseFormatted(e.target.value);
-            const price = currentCurrency === 'USD' ? btcPriceUSD : btcPriceBRL;
-            const btc = val / price;
-            btcInput.value = btc.toFixed(8);
-            satsInput.value = Math.round(btc * 100000000).toLocaleString(currentLang);
-            e.target.value = formatNumberInput(e.target.value); // Formatação visual
-        };
-
-        satsInput.oninput = (e) => {
-            const val = parseFormatted(e.target.value);
-            const btc = val / 100000000;
-            const price = currentCurrency === 'USD' ? btcPriceUSD : btcPriceBRL;
-            btcInput.value = btc.toFixed(8);
-            fiatInput.value = (btc * price).toLocaleString(currentLang, {minimumFractionDigits: 2});
-            e.target.value = formatNumberInput(e.target.value);
-        };
-
-        document.getElementById('lang-toggle').onclick = () => {
-            currentLang = currentLang === 'pt-BR' ? 'en-US' : 'pt-BR';
-            currentCurrency = currentLang === 'pt-BR' ? 'BRL' : 'USD';
-            localStorage.setItem('pref-lang', currentLang);
-            localStorage.setItem('pref-curr', currentCurrency);
-            updateLangUI();
-            updatePriceDisplay();
-        };
-
-        document.getElementById('currency-toggle').onclick = () => {
-            currentCurrency = currentCurrency === 'USD' ? 'BRL' : 'USD';
-            localStorage.setItem('pref-curr', currentCurrency);
-            updateLangUI();
-            updatePriceDisplay();
-        };
-
-        document.getElementById('theme-btn').onclick = () => {
-            document.body.classList.toggle('light-mode');
-            document.getElementById('theme-btn').innerText = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
-        };
-
-        window.copyVal = (id) => {
-            const el = document.getElementById(id);
-            const area = document.createElement("textarea");
-            area.value = el.value.replace(/\./g, '').replace(',', '.');
-            document.body.appendChild(area); area.select();
-            document.execCommand('copy'); document.body.removeChild(area);
-            const t = document.getElementById('toast'); 
-            t.innerText = translations[currentLang].toastCopy;
-            t.style.display='block'; setTimeout(()=>t.style.display='none', 2500);
-        };
-
-        updateLangUI();
-        updateData();
-        setInterval(updateData, 60000);
     </script>
 </body>
 </html>
